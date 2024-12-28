@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Plus } from "lucide-react";
@@ -28,6 +28,37 @@ const CreateMenu = () => {
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
 
+  // Fetch existing menu items when component mounts
+  useEffect(() => {
+    const fetchMenuItems = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("menu_items")
+        .select("*")
+        .eq("restaurant_id", user.id);
+
+      if (error) {
+        console.error("Error fetching menu items:", error);
+        return;
+      }
+
+      setMenuItems(
+        data.map((item) => ({
+          id: item.id,
+          name: item.name,
+          image: item.image_url || "",
+          halfPrice: item.half_price,
+          fullPrice: item.full_price,
+          outOfStock: item.out_of_stock || false,
+        }))
+      );
+    };
+
+    fetchMenuItems();
+  }, []);
+
   const handleAddItem = () => {
     setIsCreating(true);
     setNewItem({
@@ -51,6 +82,16 @@ const CreateMenu = () => {
     }
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication Error",
+          description: "Please log in to create menu items",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data, error } = await supabase
         .from("menu_items")
         .insert({
@@ -59,6 +100,7 @@ const CreateMenu = () => {
           half_price: newItem.halfPrice,
           full_price: newItem.fullPrice,
           out_of_stock: newItem.outOfStock,
+          restaurant_id: user.id,
         })
         .select()
         .single();
