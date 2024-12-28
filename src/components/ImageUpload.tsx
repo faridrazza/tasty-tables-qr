@@ -19,7 +19,7 @@ const ImageUpload = ({ onImageUploaded }: ImageUploadProps) => {
       const fileExt = file.name.split(".").pop();
       const filePath = `${crypto.randomUUID()}.${fileExt}`;
 
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("menu_images")
         .upload(filePath, file);
 
