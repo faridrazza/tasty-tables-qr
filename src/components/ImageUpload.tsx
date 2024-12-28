@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ImageUploadProps {
   onImageUploaded: (url: string) => void;
@@ -9,6 +10,7 @@ interface ImageUploadProps {
 
 const ImageUpload = ({ onImageUploaded }: ImageUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -16,12 +18,27 @@ const ImageUpload = ({ onImageUploaded }: ImageUploadProps) => {
 
     try {
       setIsUploading(true);
+
+      // Check if user is authenticated
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        toast({
+          title: "Authentication Error",
+          description: "Please log in to upload images",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const fileExt = file.name.split(".").pop();
       const filePath = `${crypto.randomUUID()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("menu_images")
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          upsert: false,
+        });
 
       if (uploadError) {
         throw uploadError;
@@ -32,8 +49,18 @@ const ImageUpload = ({ onImageUploaded }: ImageUploadProps) => {
         .getPublicUrl(filePath);
 
       onImageUploaded(publicUrl);
+      
+      toast({
+        title: "Success",
+        description: "Image uploaded successfully",
+      });
     } catch (error) {
       console.error("Error uploading image:", error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsUploading(false);
     }
