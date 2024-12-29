@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import ImageUpload from "@/components/ImageUpload";
 import { Trash2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface MenuItem {
   id: string;
@@ -22,6 +23,20 @@ interface MenuItemFormProps {
 }
 
 const MenuItemForm = ({ item, onUpdate, onSave, onCancel }: MenuItemFormProps) => {
+  const { toast } = useToast();
+
+  const handleSave = () => {
+    if (!item.image) {
+      toast({
+        title: "Image Required",
+        description: "Please upload an image for the menu item",
+        variant: "destructive",
+      });
+      return;
+    }
+    onSave();
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm space-y-4 mb-6">
       <div className="grid grid-cols-2 gap-4">
@@ -67,7 +82,7 @@ const MenuItemForm = ({ item, onUpdate, onSave, onCancel }: MenuItemFormProps) =
           </label>
           <Input
             type="number"
-            value={item.halfPrice}
+            value={item.halfPrice || ""}
             onChange={(e) => onUpdate("halfPrice", Number(e.target.value))}
             placeholder="Enter half price"
           />
@@ -78,7 +93,7 @@ const MenuItemForm = ({ item, onUpdate, onSave, onCancel }: MenuItemFormProps) =
           </label>
           <Input
             type="number"
-            value={item.fullPrice}
+            value={item.fullPrice || ""}
             onChange={(e) => onUpdate("fullPrice", Number(e.target.value))}
             placeholder="Enter full price"
           />
@@ -96,7 +111,7 @@ const MenuItemForm = ({ item, onUpdate, onSave, onCancel }: MenuItemFormProps) =
           <Button variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button onClick={onSave}>Save Item</Button>
+          <Button onClick={handleSave}>Save Item</Button>
         </div>
       </div>
     </div>
