@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import MenuItemForm from "@/components/menu/MenuItemForm";
 import MenuItemList from "@/components/menu/MenuItemList";
+import { useNavigate } from "react-router-dom";
 
 interface MenuItem {
   id: string;
@@ -27,12 +28,20 @@ const CreateMenu = () => {
   });
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  // Fetch existing menu items when component mounts
   useEffect(() => {
     const fetchMenuItems = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        toast({
+          title: "Authentication Error",
+          description: "Please log in to access your menu",
+          variant: "destructive",
+        });
+        navigate("/login");
+        return;
+      }
 
       const { data, error } = await supabase
         .from("menu_items")
@@ -41,6 +50,11 @@ const CreateMenu = () => {
 
       if (error) {
         console.error("Error fetching menu items:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load menu items",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -57,7 +71,7 @@ const CreateMenu = () => {
     };
 
     fetchMenuItems();
-  }, []);
+  }, [navigate, toast]);
 
   const handleAddItem = () => {
     setIsCreating(true);
@@ -89,6 +103,7 @@ const CreateMenu = () => {
           description: "Please log in to create menu items",
           variant: "destructive",
         });
+        navigate("/login");
         return;
       }
 
@@ -118,43 +133,52 @@ const CreateMenu = () => {
         outOfStock: false,
       });
 
-      toast({
-        title: "Success",
-        description: "Menu item added successfully",
-      });
-    } catch (error) {
+      // If this is the first menu item, navigate to QR code page
+      if (menuItems.length === 0) {
+        toast({
+          title: "Success",
+          description: "First menu item added! Redirecting to QR code section...",
+        });
+        setTimeout(() => navigate("/dashboard/qr-code"), 2000);
+      } else {
+        toast({
+          title: "Success",
+          description: "Menu item added successfully",
+        });
+      }
+    } catch (error: any) {
       console.error("Error saving menu item:", error);
       toast({
         title: "Error",
-        description: "Failed to save menu item",
+        description: error.message || "Failed to save menu item",
         variant: "destructive",
       });
     }
   };
 
   const handleDeleteItem = async (id: string) => {
-    if (confirm("Are you sure you want to delete this item?")) {
-      try {
-        const { error } = await supabase
-          .from("menu_items")
-          .delete()
-          .eq("id", id);
+    if (!confirm("Are you sure you want to delete this item?")) return;
 
-        if (error) throw error;
+    try {
+      const { error } = await supabase
+        .from("menu_items")
+        .delete()
+        .eq("id", id);
 
-        setMenuItems(menuItems.filter((item) => item.id !== id));
-        toast({
-          title: "Item deleted",
-          description: "The menu item has been removed.",
-        });
-      } catch (error) {
-        console.error("Error deleting menu item:", error);
-        toast({
-          title: "Error",
-          description: "Failed to delete menu item",
-          variant: "destructive",
-        });
-      }
+      if (error) throw error;
+
+      setMenuItems(menuItems.filter((item) => item.id !== id));
+      toast({
+        title: "Item deleted",
+        description: "The menu item has been removed.",
+      });
+    } catch (error: any) {
+      console.error("Error deleting menu item:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete menu item",
+        variant: "destructive",
+      });
     }
   };
 
@@ -166,11 +190,18 @@ const CreateMenu = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-primary">Menu Management</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-primary">Menu Management</h1>
+          <p className="text-gray-600 mt-1">
+            {menuItems.length === 0
+              ? "Start by creating your first menu item"
+              : `${menuItems.length} item${menuItems.length === 1 ? "" : "s"} in your menu`}
+          </p>
+        </div>
         {!isCreating && (
-          <Button onClick={handleAddItem}>
+          <Button onClick={handleAddItem} size="lg">
             <Plus className="w-4 h-4 mr-2" />
             {menuItems.length === 0 ? "Create Menu" : "Add Item"}
           </Button>
@@ -187,6 +218,17 @@ const CreateMenu = () => {
       )}
 
       <MenuItemList items={menuItems} onDelete={handleDeleteItem} />
+
+      {menuItems.length > 0 && !isCreating && (
+        <div className="mt-8 text-center">
+          <Button
+            variant="outline"
+            onClick={() => navigate("/dashboard/qr-code")}
+          >
+            View QR Code
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
