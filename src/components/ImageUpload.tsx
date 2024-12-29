@@ -18,16 +18,27 @@ const ImageUpload = ({ onImageUploaded }: ImageUploadProps) => {
 
     try {
       setIsUploading(true);
+
+      // First check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to upload images",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const fileExt = file.name.split(".").pop();
       const filePath = `${crypto.randomUUID()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("menu_images")
-        .upload(filePath, file, {
-          upsert: false,
-        });
+        .upload(filePath, file);
 
       if (uploadError) {
+        console.error("Upload error:", uploadError);
         throw uploadError;
       }
 
