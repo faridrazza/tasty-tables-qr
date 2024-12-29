@@ -18,19 +18,6 @@ const ImageUpload = ({ onImageUploaded }: ImageUploadProps) => {
 
     try {
       setIsUploading(true);
-
-      // Check if user is authenticated
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        toast({
-          title: "Authentication Error",
-          description: "Please log in to upload images",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const fileExt = file.name.split(".").pop();
       const filePath = `${crypto.randomUUID()}.${fileExt}`;
 

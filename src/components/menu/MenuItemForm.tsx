@@ -1,10 +1,8 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import ImageUpload from "@/components/ImageUpload";
 import { Trash2 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
 
 interface MenuItem {
   id: string;
@@ -23,20 +21,6 @@ interface MenuItemFormProps {
 }
 
 const MenuItemForm = ({ item, onUpdate, onSave, onCancel }: MenuItemFormProps) => {
-  const { toast } = useToast();
-
-  const handleSave = () => {
-    if (!item.image) {
-      toast({
-        title: "Image Required",
-        description: "Please upload an image for the menu item",
-        variant: "destructive",
-      });
-      return;
-    }
-    onSave();
-  };
-
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm space-y-4 mb-6">
       <div className="grid grid-cols-2 gap-4">
@@ -52,7 +36,7 @@ const MenuItemForm = ({ item, onUpdate, onSave, onCancel }: MenuItemFormProps) =
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">
-            Item Image *
+            Item Image
           </label>
           <div className="flex items-center gap-4">
             {item.image ? (
@@ -111,7 +95,7 @@ const MenuItemForm = ({ item, onUpdate, onSave, onCancel }: MenuItemFormProps) =
           <Button variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>Save Item</Button>
+          <Button onClick={onSave}>Save Item</Button>
         </div>
       </div>
     </div>
