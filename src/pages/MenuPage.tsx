@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { Plus, Minus, ShoppingCart } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 interface MenuItem {
   id: string;
@@ -21,27 +24,47 @@ interface CartItem extends MenuItem {
 const MenuPage = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [tableNumber, setTableNumber] = useState("");
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { restaurantId } = useParams();
   const { toast } = useToast();
 
-  // Mock menu items (in real app, this would come from an API)
-  const menuItems: MenuItem[] = [
-    {
-      id: "1",
-      name: "Margherita Pizza",
-      image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085",
-      halfPrice: 12,
-      fullPrice: 18,
-      outOfStock: false,
-    },
-    {
-      id: "2",
-      name: "Garlic Bread",
-      image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085",
-      halfPrice: 5,
-      fullPrice: 8,
-      outOfStock: false,
-    },
-  ];
+  useEffect(() => {
+    const fetchMenuItems = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("menu_items")
+          .select("*")
+          .eq("restaurant_id", restaurantId);
+
+        if (error) throw error;
+
+        setMenuItems(
+          data.map((item) => ({
+            id: item.id,
+            name: item.name,
+            image: item.image_url,
+            halfPrice: item.half_price,
+            fullPrice: item.full_price,
+            outOfStock: item.out_of_stock,
+          }))
+        );
+      } catch (error: any) {
+        console.error("Error fetching menu items:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load menu items",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (restaurantId) {
+      fetchMenuItems();
+    }
+  }, [restaurantId, toast]);
 
   const addToCart = (item: MenuItem, size: "half" | "full") => {
     const existingItem = cart.find(
@@ -70,7 +93,7 @@ const MenuPage = () => {
     setCart(cart.filter((item) => !(item.id === itemId && item.size === size)));
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!tableNumber) {
       toast({
         title: "Table number required",
@@ -82,7 +105,6 @@ const MenuPage = () => {
 
     if (cart.length === 0) {
       toast({
-        
         title: "Empty cart",
         description: "Please add items to your cart before placing an order.",
         variant: "destructive",
@@ -90,14 +112,68 @@ const MenuPage = () => {
       return;
     }
 
-    // TODO: Implement order placement
-    toast({
-      title: "Order placed successfully!",
-      description: `Your order will be served to table ${tableNumber}.`,
-    });
-    setCart([]);
-    setTableNumber("");
+    try {
+      // Create the order
+      const { data: orderData, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          restaurant_id: restaurantId,
+          table_number: parseInt(tableNumber),
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Create order items
+      const orderItems = cart.map((item) => ({
+        order_id: orderData.id,
+        menu_item_id: item.id,
+        quantity: item.quantity,
+        size: item.size,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      toast({
+        title: "Order placed successfully!",
+        description: `Your order will be served to table ${tableNumber}.`,
+      });
+      
+      setCart([]);
+      setTableNumber("");
+    } catch (error: any) {
+      console.error("Error placing order:", error);
+      toast({
+        title: "Error",
+        description: "Failed to place order. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!menuItems.length) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">No Menu Items</h1>
+          <p className="text-gray-600">This restaurant hasn't added any items yet.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
