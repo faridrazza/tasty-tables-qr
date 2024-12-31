@@ -77,6 +77,7 @@ const Orders = () => {
         throw new Error(error.message);
       }
 
+      console.log("Update successful:", data);
       return data;
     },
     onSuccess: (data) => {
