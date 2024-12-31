@@ -33,7 +33,7 @@ const GSTSettings = () => {
       const { data: settings, error } = await supabase
         .from("gst_settings")
         .select("*")
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
@@ -47,9 +47,20 @@ const GSTSettings = () => {
         if (![5, 18].includes(Number(settings.gst_rate))) {
           setCustomRate(true);
         }
+      } else {
+        // Initialize with default values if no settings exist
+        setValue("restaurant_name", "");
+        setValue("address", "");
+        setValue("gst_rate", "5");
+        setValue("gst_number", "");
       }
     } catch (error: any) {
       console.error("Error fetching GST settings:", error);
+      toast({
+        title: "Error fetching GST settings",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
