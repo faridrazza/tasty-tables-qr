@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Loader2 } from "lucide-react";
 import { CartItem } from "@/types/menu";
 
 interface CartPanelProps {
@@ -9,6 +9,7 @@ interface CartPanelProps {
   onTableNumberChange: (value: string) => void;
   onRemoveFromCart: (itemId: string, size: "half" | "full") => void;
   onPlaceOrder: () => void;
+  isPlacingOrder: boolean;
 }
 
 const CartPanel = ({
@@ -17,6 +18,7 @@ const CartPanel = ({
   onTableNumberChange,
   onRemoveFromCart,
   onPlaceOrder,
+  isPlacingOrder,
 }: CartPanelProps) => {
   if (cart.length === 0) return null;
 
@@ -32,10 +34,15 @@ const CartPanel = ({
               value={tableNumber}
               onChange={(e) => onTableNumberChange(e.target.value)}
               className="w-32"
+              disabled={isPlacingOrder}
             />
-            <Button onClick={onPlaceOrder}>
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              Place Order
+            <Button onClick={onPlaceOrder} disabled={isPlacingOrder}>
+              {isPlacingOrder ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <ShoppingCart className="w-4 h-4 mr-2" />
+              )}
+              {isPlacingOrder ? "Placing Order..." : "Place Order"}
             </Button>
           </div>
         </div>
@@ -52,6 +59,7 @@ const CartPanel = ({
                 size="sm"
                 variant="destructive"
                 onClick={() => onRemoveFromCart(item.id, item.size)}
+                disabled={isPlacingOrder}
               >
                 Remove
               </Button>

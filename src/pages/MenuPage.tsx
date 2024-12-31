@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -13,6 +13,7 @@ const MenuPage = () => {
   const [tableNumber, setTableNumber] = useState("");
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const { restaurantId } = useParams();
   const { toast } = useToast();
 
@@ -99,18 +100,26 @@ const MenuPage = () => {
       return;
     }
 
+    setIsPlacingOrder(true);
+
     try {
+      // First create the order
       const { data: orderData, error: orderError } = await supabase
         .from("orders")
         .insert({
           restaurant_id: restaurantId,
           table_number: parseInt(tableNumber),
+          status: 'pending'
         })
         .select()
         .single();
 
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.error("Order creation error:", orderError);
+        throw new Error("Failed to create order");
+      }
 
+      // Then create the order items
       const orderItems = cart.map((item) => ({
         order_id: orderData.id,
         menu_item_id: item.id,
@@ -122,7 +131,10 @@ const MenuPage = () => {
         .from("order_items")
         .insert(orderItems);
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error("Order items creation error:", itemsError);
+        throw new Error("Failed to create order items");
+      }
 
       toast({
         title: "Order placed successfully!",
@@ -138,6 +150,8 @@ const MenuPage = () => {
         description: "Failed to place order. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsPlacingOrder(false);
     }
   };
 
@@ -180,6 +194,7 @@ const MenuPage = () => {
         onTableNumberChange={setTableNumber}
         onRemoveFromCart={removeFromCart}
         onPlaceOrder={handlePlaceOrder}
+        isPlacingOrder={isPlacingOrder}
       />
     </div>
   );
