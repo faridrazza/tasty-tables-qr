@@ -34,9 +34,17 @@ const GSTSettings = () => {
       const { data, error } = await supabase
         .from("gst_settings")
         .select("*")
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching GST settings:", error);
+        toast({
+          title: "Error fetching GST settings",
+          description: "Please try again later",
+          variant: "destructive",
+        });
+        throw error;
+      }
       return data;
     },
   });
@@ -76,7 +84,7 @@ const GSTSettings = () => {
       const { data: existingSettings } = await supabase
         .from("gst_settings")
         .select("id")
-        .single();
+        .maybeSingle();
 
       if (existingSettings) {
         const { error } = await supabase
