@@ -16,13 +16,13 @@ import {
   ClipboardList,
   BarChart,
   LogOut,
+  IndianRupee,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { supabase } from "@/integrations/supabase/client";
 
 const DashboardLayout = () => {
-  // Add authentication check at the layout level
   useRequireAuth();
   
   const navigate = useNavigate();
@@ -67,6 +67,11 @@ const DashboardLayout = () => {
       title: "Analytics",
       url: "/dashboard/analytics",
       icon: BarChart,
+    },
+    {
+      title: "GST Settings",
+      url: "/dashboard/gst-settings",
+      icon: IndianRupee,
     },
   ];
 

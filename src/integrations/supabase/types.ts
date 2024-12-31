@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      gst_settings: {
+        Row: {
+          address: string
+          created_at: string
+          gst_number: string
+          gst_rate: number
+          id: string
+          restaurant_id: string
+          restaurant_name: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          gst_number: string
+          gst_rate: number
+          id?: string
+          restaurant_id: string
+          restaurant_name: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          gst_number?: string
+          gst_rate?: number
+          id?: string
+          restaurant_id?: string
+          restaurant_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       menu_items: {
         Row: {
           created_at: string
