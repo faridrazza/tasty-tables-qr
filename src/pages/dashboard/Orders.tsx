@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -9,9 +9,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Check, X, Loader2 } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { OrderStatus } from "@/components/orders/OrderStatus";
+import { OrderItems } from "@/components/orders/OrderItems";
+import { StatusBadge } from "@/components/orders/StatusBadge";
 
 interface OrderItem {
   id: string;
@@ -65,7 +66,7 @@ const Orders = () => {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, { status }) => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       toast({
         title: `Order ${status === 'cancelled' ? 'cancelled' : 'completed'} successfully`,
@@ -79,6 +80,10 @@ const Orders = () => {
       });
     },
   });
+
+  const handleUpdateStatus = (orderId: string, status: string) => {
+    updateOrderStatus.mutate({ orderId, status });
+  };
 
   if (isLoading) {
     return (
@@ -118,61 +123,20 @@ const Orders = () => {
               <TableRow key={order.id}>
                 <TableCell>Table {order.table_number}</TableCell>
                 <TableCell>
-                  <ul className="space-y-1">
-                    {order.order_items.map((item) => (
-                      <li key={item.id}>
-                        {item.quantity}x {item.menu_item.name} ({item.size})
-                      </li>
-                    ))}
-                  </ul>
+                  <OrderItems items={order.order_items} />
                 </TableCell>
                 <TableCell>
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      order.status === "completed"
-                        ? "bg-green-100 text-green-800"
-                        : order.status === "cancelled"
-                        ? "bg-red-100 text-red-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {order.status}
-                  </span>
+                  <StatusBadge status={order.status} />
                 </TableCell>
                 <TableCell>
                   {new Date(order.created_at).toLocaleString()}
                 </TableCell>
                 <TableCell>
-                  {order.status === "pending" && (
-                    <div className="flex space-x-2">
-                      <Button
-                        size="sm"
-                        className="bg-green-500 hover:bg-green-600"
-                        onClick={() =>
-                          updateOrderStatus.mutate({
-                            orderId: order.id,
-                            status: "completed",
-                          })
-                        }
-                      >
-                        <Check className="w-4 h-4 mr-1" />
-                        Complete
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() =>
-                          updateOrderStatus.mutate({
-                            orderId: order.id,
-                            status: "cancelled",
-                          })
-                        }
-                      >
-                        <X className="w-4 h-4 mr-1" />
-                        Cancel
-                      </Button>
-                    </div>
-                  )}
+                  <OrderStatus
+                    status={order.status}
+                    orderId={order.id}
+                    onUpdateStatus={handleUpdateStatus}
+                  />
                 </TableCell>
               </TableRow>
             ))}
