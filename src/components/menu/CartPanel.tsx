@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShoppingCart, Loader2, X } from "lucide-react";
+import { ShoppingCart, Loader2, X, Plus, Minus } from "lucide-react";
 import { CartItem } from "@/types/menu";
 import {
   Dialog,
@@ -38,7 +38,7 @@ const CartPanel = ({
     <>
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 right-4 shadow-lg rounded-full px-6 py-6"
+        className="fixed bottom-8 right-4 shadow-lg rounded-full px-6 py-6"
       >
         <ShoppingCart className="w-5 h-5 mr-2" />
         {itemCount} {itemText} Added
@@ -67,17 +67,44 @@ const CartPanel = ({
                   <div className="flex flex-col">
                     <span className="font-medium">{item.name}</span>
                     <span className="text-sm text-gray-500">
-                      {item.quantity}x ({item.size})
+                      ({item.size})
                     </span>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => onRemoveFromCart(item.id, item.size)}
-                    disabled={isPlacingOrder}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 bg-white rounded-md border p-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        onClick={() => onRemoveFromCart(item.id, item.size)}
+                        disabled={isPlacingOrder || item.quantity <= 1}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="w-8 text-center">{item.quantity}</span>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        onClick={() => {
+                          const newItem = { ...item };
+                          newItem.quantity = 1;
+                          onAddToCart(newItem, item.size);
+                        }}
+                        disabled={isPlacingOrder}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => onRemoveFromCart(item.id, item.size)}
+                      disabled={isPlacingOrder}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

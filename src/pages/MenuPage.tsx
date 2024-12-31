@@ -78,7 +78,21 @@ const MenuPage = () => {
   };
 
   const removeFromCart = (itemId: string, size: "half" | "full") => {
-    setCart(cart.filter((item) => !(item.id === itemId && item.size === size)));
+    const item = cart.find(
+      (cartItem) => cartItem.id === itemId && cartItem.size === size
+    );
+
+    if (item && item.quantity > 1) {
+      setCart(
+        cart.map((cartItem) =>
+          cartItem.id === itemId && cartItem.size === size
+            ? { ...cartItem, quantity: cartItem.quantity - 1 }
+            : cartItem
+        )
+      );
+    } else {
+      setCart(cart.filter((item) => !(item.id === itemId && item.size === size)));
+    }
   };
 
   const handlePlaceOrder = async () => {
