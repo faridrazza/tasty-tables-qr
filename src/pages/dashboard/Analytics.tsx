@@ -15,9 +15,123 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { startOfToday, startOfMonth, format, parseISO } from "date-fns";
+
+interface OrderAnalytics {
+  todayRevenue: number;
+  todayOrders: number;
+  topSellingItem: string;
+  monthlyRevenue: number;
+  hourlyOrders: { hour: string; orders: number }[];
+}
+
+const fetchAnalytics = async (): Promise<OrderAnalytics> => {
+  const today = startOfToday();
+  const startOfCurrentMonth = startOfMonth(new Date());
+
+  // Fetch today's orders
+  const { data: todayOrders, error: todayError } = await supabase
+    .from('orders')
+    .select(`
+      id,
+      created_at,
+      order_items (
+        quantity,
+        size,
+        menu_item_id,
+        menu_item:menu_items (
+          name,
+          half_price,
+          full_price
+        )
+      )
+    `)
+    .gte('created_at', today.toISOString())
+    .neq('status', 'cancelled');
+
+  if (todayError) throw todayError;
+
+  // Fetch monthly orders for revenue calculation
+  const { data: monthlyOrders, error: monthlyError } = await supabase
+    .from('orders')
+    .select(`
+      id,
+      created_at,
+      order_items (
+        quantity,
+        size,
+        menu_item_id,
+        menu_item:menu_items (
+          name,
+          half_price,
+          full_price
+        )
+      )
+    `)
+    .gte('created_at', startOfCurrentMonth.toISOString())
+    .neq('status', 'cancelled');
+
+  if (monthlyError) throw monthlyError;
+
+  // Calculate today's revenue and item sales
+  const itemSales: { [key: string]: number } = {};
+  let todayRevenue = 0;
+
+  todayOrders?.forEach(order => {
+    order.order_items?.forEach(item => {
+      if (item.menu_item) {
+        // Add to item sales count
+        const itemName = item.menu_item.name;
+        itemSales[itemName] = (itemSales[itemName] || 0) + item.quantity;
+
+        // Calculate revenue
+        const price = item.size === 'half' ? item.menu_item.half_price : item.menu_item.full_price;
+        todayRevenue += price * item.quantity;
+      }
+    });
+  });
+
+  // Calculate monthly revenue
+  let monthlyRevenue = 0;
+  monthlyOrders?.forEach(order => {
+    order.order_items?.forEach(item => {
+      if (item.menu_item) {
+        const price = item.size === 'half' ? item.menu_item.half_price : item.menu_item.full_price;
+        monthlyRevenue += price * item.quantity;
+      }
+    });
+  });
+
+  // Find top selling item
+  const topSellingItem = Object.entries(itemSales).reduce(
+    (max, [item, count]) => (count > max[1] ? [item, count] : max),
+    ['', 0]
+  )[0];
+
+  // Calculate hourly orders
+  const hourlyOrders: { [key: string]: number } = {};
+  todayOrders?.forEach(order => {
+    const hour = format(parseISO(order.created_at), 'ha');
+    hourlyOrders[hour] = (hourlyOrders[hour] || 0) + 1;
+  });
+
+  const hourlyOrdersArray = Object.entries(hourlyOrders).map(([hour, orders]) => ({
+    hour,
+    orders,
+  }));
+
+  return {
+    todayRevenue,
+    todayOrders: todayOrders?.length || 0,
+    topSellingItem: topSellingItem || 'No orders today',
+    monthlyRevenue,
+    hourlyOrders: hourlyOrdersArray,
+  };
+};
 
 const Analytics = () => {
   const navigate = useNavigate();
@@ -38,15 +152,15 @@ const Analytics = () => {
   // Also use the hook for continuous auth monitoring
   useRequireAuth();
 
-  const mockData = [
-    { hour: "9AM", orders: 4 },
-    { hour: "10AM", orders: 7 },
-    { hour: "11AM", orders: 12 },
-    { hour: "12PM", orders: 18 },
-    { hour: "1PM", orders: 15 },
-    { hour: "2PM", orders: 8 },
-    { hour: "3PM", orders: 6 },
-  ];
+  const { data: analytics, isLoading } = useQuery({
+    queryKey: ['analytics'],
+    queryFn: fetchAnalytics,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-screen">Loading analytics...</div>;
+  }
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -67,13 +181,20 @@ const Analytics = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <h3 className="text-lg font-semibold mb-2">Most Ordered Today</h3>
-          <p className="text-3xl font-bold text-primary">Margherita Pizza</p>
-          <p className="text-gray-600">Ordered 24 times</p>
+          <p className="text-3xl font-bold text-primary">{analytics?.topSellingItem}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
-          <h3 className="text-lg font-semibold mb-2">Total Orders Today</h3>
-          <p className="text-3xl font-bold text-primary">72</p>
-          <p className="text-green-600">↑ 12% from yesterday</p>
+          <h3 className="text-lg font-semibold mb-2">Revenue Overview</h3>
+          <div className="space-y-2">
+            <div>
+              <p className="text-sm text-gray-600">Today's Revenue</p>
+              <p className="text-2xl font-bold text-primary">₹{analytics?.todayRevenue.toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">This Month's Revenue</p>
+              <p className="text-2xl font-bold text-primary">₹{analytics?.monthlyRevenue.toFixed(2)}</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -81,7 +202,7 @@ const Analytics = () => {
         <h3 className="text-lg font-semibold mb-4">Orders by Hour</h3>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <RechartsBarChart data={mockData}>
+            <RechartsBarChart data={analytics?.hourlyOrders || []}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="hour" />
               <YAxis />
