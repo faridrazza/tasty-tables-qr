@@ -23,7 +23,7 @@ const CartPanel = ({
   if (cart.length === 0) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 z-50">
       <div className="container mx-auto max-w-4xl">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">Your Order</h3>

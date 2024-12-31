@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
 import { MenuItem, CartItem } from "@/types/menu";
 import MenuHeader from "@/components/menu/MenuHeader";
 import CartPanel from "@/components/menu/CartPanel";
-import MenuItemComponent from "@/components/menu/MenuItem";
+import MenuItemsGrid from "@/components/menu/MenuItemsGrid";
+import MenuStateHandler from "@/components/menu/MenuStateHandler";
 
 const MenuPage = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -103,7 +103,6 @@ const MenuPage = () => {
     setIsPlacingOrder(true);
 
     try {
-      // First create the order
       const { data: orderData, error: orderError } = await supabase
         .from("orders")
         .insert({
@@ -119,7 +118,6 @@ const MenuPage = () => {
         throw new Error("Failed to create order");
       }
 
-      // Then create the order items
       const orderItems = cart.map((item) => ({
         order_id: orderData.id,
         menu_item_id: item.id,
@@ -155,39 +153,15 @@ const MenuPage = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!menuItems.length) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">No Menu Items</h1>
-          <p className="text-gray-600">This restaurant hasn't added any items yet.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50">
       <MenuHeader />
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {menuItems.map((item) => (
-            <MenuItemComponent
-              key={item.id}
-              item={item}
-              onAddToCart={addToCart}
-            />
-          ))}
+      <MenuStateHandler isLoading={isLoading} itemsCount={menuItems.length} />
+      {!isLoading && menuItems.length > 0 && (
+        <div className="container mx-auto px-4">
+          <MenuItemsGrid items={menuItems} onAddToCart={addToCart} />
         </div>
-      </div>
+      )}
       <CartPanel
         cart={cart}
         tableNumber={tableNumber}
