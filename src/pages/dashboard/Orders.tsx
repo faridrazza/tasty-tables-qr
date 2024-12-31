@@ -73,24 +73,24 @@ const Orders = () => {
         .single();
 
       if (error) {
-        console.error("Supabase error updating order:", error);
-        throw error;
+        console.error("Error updating order:", error);
+        throw new Error(error.message);
       }
 
-      console.log("Order status updated:", data);
       return data;
     },
-    onSuccess: (_, { status }) => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
+      const actionText = data.status === 'cancelled' ? 'cancelled' : 'completed';
       toast({
-        title: `Order ${status === 'cancelled' ? 'cancelled' : 'completed'} successfully`,
+        title: `Order ${actionText} successfully`,
       });
     },
     onError: (error) => {
       console.error("Error in mutation:", error);
       toast({
         title: "Failed to update order status",
-        description: "Please try again or contact support if the issue persists.",
+        description: error instanceof Error ? error.message : "Please try again",
         variant: "destructive",
       });
     },
