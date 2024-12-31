@@ -76,8 +76,8 @@ const DashboardLayout = () => {
   ];
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+    <div className="min-h-screen flex w-full">
+      <SidebarProvider>
         <Sidebar>
           <SidebarContent>
             <SidebarGroup>
@@ -108,11 +108,11 @@ const DashboardLayout = () => {
             </SidebarGroup>
           </SidebarContent>
         </Sidebar>
-        <main className="flex-1 p-8 bg-gray-50">
+        <main className="flex-1 p-8 bg-background">
           <Outlet />
         </main>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </div>
   );
 };
 
