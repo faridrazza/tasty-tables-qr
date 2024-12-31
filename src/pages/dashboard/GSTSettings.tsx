@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 const formSchema = z.object({
   restaurant_name: z.string().min(1, "Restaurant name is required"),
@@ -23,6 +24,7 @@ const formSchema = z.object({
 });
 
 const GSTSettings = () => {
+  useRequireAuth(); // Ensure user is authenticated
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -59,6 +61,18 @@ const GSTSettings = () => {
 
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error("No authenticated user found");
+
+      const formattedValues = {
+        restaurant_id: user.id,
+        restaurant_name: values.restaurant_name,
+        address: values.address,
+        gst_rate: parseFloat(values.gst_rate),
+        gst_number: values.gst_number,
+      };
+
       const { data: existingSettings } = await supabase
         .from("gst_settings")
         .select("id")
@@ -67,19 +81,13 @@ const GSTSettings = () => {
       if (existingSettings) {
         const { error } = await supabase
           .from("gst_settings")
-          .update({
-            ...values,
-            gst_rate: parseFloat(values.gst_rate),
-          })
+          .update(formattedValues)
           .eq("id", existingSettings.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("gst_settings").insert([
-          {
-            ...values,
-            gst_rate: parseFloat(values.gst_rate),
-          },
-        ]);
+        const { error } = await supabase
+          .from("gst_settings")
+          .insert([formattedValues]);
         if (error) throw error;
       }
     },
