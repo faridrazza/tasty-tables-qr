@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import MenuItemForm from "@/components/menu/MenuItemForm";
 import MenuItemList from "@/components/menu/MenuItemList";
 import { useNavigate } from "react-router-dom";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 interface MenuItem {
   id: string;
@@ -17,6 +18,7 @@ interface MenuItem {
 }
 
 const CreateMenu = () => {
+  useRequireAuth(); // Add this line to enforce authentication
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [newItem, setNewItem] = useState<MenuItem>({
     id: "",
@@ -34,12 +36,6 @@ const CreateMenu = () => {
     const fetchMenuItems = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast({
-          title: "Authentication Error",
-          description: "Please log in to access your menu",
-          variant: "destructive",
-        });
-        navigate("/login");
         return;
       }
 
@@ -71,7 +67,7 @@ const CreateMenu = () => {
     };
 
     fetchMenuItems();
-  }, [navigate, toast]);
+  }, [toast]);
 
   const handleAddItem = () => {
     setIsCreating(true);
