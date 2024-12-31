@@ -14,8 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 const Analytics = () => {
+  // Add authentication check
+  useRequireAuth();
+
   const mockData = [
     { hour: "9AM", orders: 4 },
     { hour: "10AM", orders: 7 },

@@ -13,6 +13,7 @@ import { Loader2 } from "lucide-react";
 import { OrderStatus } from "@/components/orders/OrderStatus";
 import { OrderItems } from "@/components/orders/OrderItems";
 import { StatusBadge } from "@/components/orders/StatusBadge";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 interface OrderItem {
   id: string;
@@ -33,6 +34,9 @@ interface Order {
 }
 
 const Orders = () => {
+  // Add authentication check
+  useRequireAuth();
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
