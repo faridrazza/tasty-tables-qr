@@ -7,6 +7,14 @@ import { MenuItem } from "@/types/menu";
 export const useMenuItems = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [newItem, setNewItem] = useState<MenuItem>({
+    id: "",
+    name: "",
+    image: "",
+    halfPrice: 0,
+    fullPrice: 0,
+    outOfStock: false,
+  });
   const { toast } = useToast();
   const navigate = useNavigate();
 
