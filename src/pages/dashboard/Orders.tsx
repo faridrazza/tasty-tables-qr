@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
@@ -39,6 +39,7 @@ const Orders = () => {
   const { data: orders, isLoading } = useQuery({
     queryKey: ["orders"],
     queryFn: async () => {
+      console.log("Fetching orders...");
       const { data, error } = await supabase
         .from("orders")
         .select(`
@@ -52,19 +53,32 @@ const Orders = () => {
         `)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching orders:", error);
+        throw error;
+      }
+      console.log("Orders fetched:", data);
       return data as Order[];
     },
   });
 
   const updateOrderStatus = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
-      const { error } = await supabase
+      console.log("Updating order status:", { orderId, status });
+      const { data, error } = await supabase
         .from("orders")
         .update({ status })
-        .eq("id", orderId);
+        .eq("id", orderId)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error updating order:", error);
+        throw error;
+      }
+
+      console.log("Order status updated:", data);
+      return data;
     },
     onSuccess: (_, { status }) => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
@@ -73,15 +87,17 @@ const Orders = () => {
       });
     },
     onError: (error) => {
-      console.error("Error updating order status:", error);
+      console.error("Error in mutation:", error);
       toast({
         title: "Failed to update order status",
+        description: "Please try again or contact support if the issue persists.",
         variant: "destructive",
       });
     },
   });
 
   const handleUpdateStatus = (orderId: string, status: string) => {
+    console.log("Handle update status called:", { orderId, status });
     updateOrderStatus.mutate({ orderId, status });
   };
 
