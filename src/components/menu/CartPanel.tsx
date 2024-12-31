@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ShoppingCart, Loader2, X, Plus, Minus } from "lucide-react";
-import { CartItem } from "@/types/menu";
+import { CartItem, MenuItem } from "@/types/menu";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,7 @@ interface CartPanelProps {
   onRemoveFromCart: (itemId: string, size: "half" | "full") => void;
   onPlaceOrder: () => void;
   isPlacingOrder: boolean;
+  onAddToCart: (item: MenuItem, size: "half" | "full") => void;
 }
 
 const CartPanel = ({
@@ -26,6 +27,7 @@ const CartPanel = ({
   onRemoveFromCart,
   onPlaceOrder,
   isPlacingOrder,
+  onAddToCart,
 }: CartPanelProps) => {
   const [isOpen, setIsOpen] = useState(false);
   
@@ -86,11 +88,7 @@ const CartPanel = ({
                         size="icon"
                         variant="ghost"
                         className="h-6 w-6"
-                        onClick={() => {
-                          const newItem = { ...item };
-                          newItem.quantity = 1;
-                          onAddToCart(newItem, item.size);
-                        }}
+                        onClick={() => onAddToCart(item, item.size)}
                         disabled={isPlacingOrder}
                       >
                         <Plus className="h-4 w-4" />

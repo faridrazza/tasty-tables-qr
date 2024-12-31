@@ -183,6 +183,7 @@ const MenuPage = () => {
         onRemoveFromCart={removeFromCart}
         onPlaceOrder={handlePlaceOrder}
         isPlacingOrder={isPlacingOrder}
+        onAddToCart={addToCart}
       />
     </div>
   );
