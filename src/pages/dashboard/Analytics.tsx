@@ -15,9 +15,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const Analytics = () => {
-  // Add authentication check
+  const navigate = useNavigate();
+
+  // Check authentication status immediately
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/login");
+        return;
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
+
+  // Also use the hook for continuous auth monitoring
   useRequireAuth();
 
   const mockData = [

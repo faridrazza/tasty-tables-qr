@@ -9,33 +9,41 @@ export function useRequireAuth() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error("Auth error:", error);
-        toast({
-          title: "Authentication Error",
-          description: "Please log in to access your menu",
-          variant: "destructive",
-        });
-        navigate("/login");
-        return;
-      }
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Auth error:", error);
+          toast({
+            title: "Authentication Error",
+            description: "Please log in to access this section",
+            variant: "destructive",
+          });
+          navigate("/login");
+          return;
+        }
 
-      if (!session) {
-        toast({
-          title: "Authentication Required",
-          description: "Please log in to access your menu",
-          variant: "destructive",
-        });
+        if (!session) {
+          toast({
+            title: "Authentication Required",
+            description: "Please log in to access this section",
+            variant: "destructive",
+          });
+          navigate("/login");
+          return;
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
         navigate("/login");
       }
     };
 
+    // Check auth immediately
     checkAuth();
 
+    // Also subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         if (event === "SIGNED_OUT" || !session) {
           navigate("/login");
         }
