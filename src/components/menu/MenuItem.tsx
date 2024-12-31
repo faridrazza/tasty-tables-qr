@@ -18,16 +18,20 @@ const MenuItem = ({ item, onAddToCart }: MenuItemProps) => {
         <h3 className="text-lg font-semibold mb-2">{item.name}</h3>
         <div className="flex justify-between items-center mb-4">
           <div>
-            <p className="text-sm text-gray-600">Half: ${item.halfPrice}</p>
+            {item.halfPrice > 0 && (
+              <p className="text-sm text-gray-600">Half: ${item.halfPrice}</p>
+            )}
             <p className="text-sm text-gray-600">Full: ${item.fullPrice}</p>
           </div>
           {item.outOfStock ? (
-            <span className="text-red-500">Out of Stock</span>
+            <span className="text-red-500 font-medium">Out of Stock</span>
           ) : (
             <div className="space-x-2">
-              <Button size="sm" onClick={() => onAddToCart(item, "half")}>
-                Add Half
-              </Button>
+              {item.halfPrice > 0 && (
+                <Button size="sm" onClick={() => onAddToCart(item, "half")}>
+                  Add Half
+                </Button>
+              )}
               <Button size="sm" onClick={() => onAddToCart(item, "full")}>
                 Add Full
               </Button>

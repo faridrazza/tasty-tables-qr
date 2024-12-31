@@ -1,22 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Trash2 } from "lucide-react";
-
-interface MenuItem {
-  id: string;
-  name: string;
-  image: string;
-  halfPrice: number;
-  fullPrice: number;
-  outOfStock: boolean;
-}
+import { MenuItem } from "@/types/menu";
 
 interface MenuItemListProps {
   items: MenuItem[];
   onDelete: (id: string) => void;
+  onToggleOutOfStock: (id: string, currentStatus: boolean) => void;
 }
 
-const MenuItemList = ({ items, onDelete }: MenuItemListProps) => {
+const MenuItemList = ({ items, onDelete, onToggleOutOfStock }: MenuItemListProps) => {
   return (
     <div className="space-y-4">
       {items.map((item) => (
@@ -45,7 +38,9 @@ const MenuItemList = ({ items, onDelete }: MenuItemListProps) => {
               <label className="block text-sm font-medium mb-1">
                 Half Price
               </label>
-              <div className="text-gray-700">${item.halfPrice}</div>
+              <div className="text-gray-700">
+                {item.halfPrice ? `$${item.halfPrice}` : 'N/A'}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">
@@ -56,7 +51,10 @@ const MenuItemList = ({ items, onDelete }: MenuItemListProps) => {
           </div>
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2">
-              <Switch checked={item.outOfStock} disabled />
+              <Switch 
+                checked={item.outOfStock} 
+                onCheckedChange={() => onToggleOutOfStock(item.id, item.outOfStock)}
+              />
               <span className="text-sm text-gray-600">Out of Stock</span>
             </div>
             <Button

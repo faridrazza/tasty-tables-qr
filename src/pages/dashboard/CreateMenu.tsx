@@ -1,189 +1,23 @@
-import { useState, useEffect } from "react";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
 import { Plus } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import MenuItemForm from "@/components/menu/MenuItemForm";
 import MenuItemList from "@/components/menu/MenuItemList";
 import { useNavigate } from "react-router-dom";
-import { useRequireAuth } from "@/hooks/useRequireAuth";
-
-interface MenuItem {
-  id: string;
-  name: string;
-  image: string;
-  halfPrice: number;
-  fullPrice: number;
-  outOfStock: boolean;
-}
+import { useMenuItems } from "./menu/useMenuItems";
 
 const CreateMenu = () => {
-  useRequireAuth(); // Add this line to enforce authentication
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [newItem, setNewItem] = useState<MenuItem>({
-    id: "",
-    name: "",
-    image: "",
-    halfPrice: 0,
-    fullPrice: 0,
-    outOfStock: false,
-  });
-  const [isCreating, setIsCreating] = useState(false);
-  const { toast } = useToast();
+  useRequireAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchMenuItems = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("menu_items")
-        .select("*")
-        .eq("restaurant_id", user.id);
-
-      if (error) {
-        console.error("Error fetching menu items:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load menu items",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setMenuItems(
-        data.map((item) => ({
-          id: item.id,
-          name: item.name,
-          image: item.image_url || "",
-          halfPrice: item.half_price,
-          fullPrice: item.full_price,
-          outOfStock: item.out_of_stock || false,
-        }))
-      );
-    };
-
-    fetchMenuItems();
-  }, [toast]);
-
-  const handleAddItem = () => {
-    setIsCreating(true);
-    setNewItem({
-      id: Date.now().toString(),
-      name: "",
-      image: "",
-      halfPrice: 0,
-      fullPrice: 0,
-      outOfStock: false,
-    });
-  };
-
-  const handleSaveItem = async () => {
-    if (!newItem.name || !newItem.image || newItem.halfPrice <= 0 || newItem.fullPrice <= 0) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication Error",
-          description: "Please log in to create menu items",
-          variant: "destructive",
-        });
-        navigate("/login");
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("menu_items")
-        .insert({
-          name: newItem.name,
-          image_url: newItem.image,
-          half_price: newItem.halfPrice,
-          full_price: newItem.fullPrice,
-          out_of_stock: newItem.outOfStock,
-          restaurant_id: user.id,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setMenuItems([...menuItems, { ...newItem, id: data.id }]);
-      setIsCreating(false);
-      setNewItem({
-        id: "",
-        name: "",
-        image: "",
-        halfPrice: 0,
-        fullPrice: 0,
-        outOfStock: false,
-      });
-
-      // If this is the first menu item, navigate to QR code page
-      if (menuItems.length === 0) {
-        toast({
-          title: "Success",
-          description: "First menu item added! Redirecting to QR code section...",
-        });
-        setTimeout(() => navigate("/dashboard/qr-code"), 2000);
-      } else {
-        toast({
-          title: "Success",
-          description: "Menu item added successfully",
-        });
-      }
-    } catch (error: any) {
-      console.error("Error saving menu item:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save menu item",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteItem = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this item?")) return;
-
-    try {
-      const { error } = await supabase
-        .from("menu_items")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-
-      setMenuItems(menuItems.filter((item) => item.id !== id));
-      toast({
-        title: "Item deleted",
-        description: "The menu item has been removed.",
-      });
-    } catch (error: any) {
-      console.error("Error deleting menu item:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete menu item",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleUpdateNewItem = (
-    field: keyof MenuItem,
-    value: string | boolean | number
-  ) => {
-    setNewItem((prev) => ({ ...prev, [field]: value }));
-  };
+  const {
+    menuItems,
+    isCreating,
+    setIsCreating,
+    handleAddItem,
+    handleSaveItem,
+    handleDeleteItem,
+    handleToggleOutOfStock,
+  } = useMenuItems();
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -206,14 +40,18 @@ const CreateMenu = () => {
 
       {isCreating && (
         <MenuItemForm
-          item={newItem}
-          onUpdate={handleUpdateNewItem}
           onSave={handleSaveItem}
           onCancel={() => setIsCreating(false)}
+          showOutOfStock={false}
+          isHalfPriceOptional={true}
         />
       )}
 
-      <MenuItemList items={menuItems} onDelete={handleDeleteItem} />
+      <MenuItemList 
+        items={menuItems} 
+        onDelete={handleDeleteItem}
+        onToggleOutOfStock={handleToggleOutOfStock}
+      />
 
       {menuItems.length > 0 && !isCreating && (
         <div className="mt-8 text-center">
