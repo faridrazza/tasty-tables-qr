@@ -68,7 +68,7 @@ const Orders = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       toast({
-        title: "Order status updated",
+        title: `Order ${status === 'cancelled' ? 'cancelled' : 'completed'} successfully`,
       });
     },
     onError: (error) => {
