@@ -1,25 +1,72 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const SignUpPage = () => {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSignUp = (e: React.FormEvent) => {
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/dashboard/create-menu");
+      }
+    };
+    
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        navigate("/dashboard/create-menu");
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
+
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement actual registration
-    if (email && phone && password) {
-      toast({
-        title: "Account created successfully",
-        description: "Welcome to RestaurantOS!",
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            phone: phone,
+          },
+        },
       });
-      navigate("/dashboard/create-menu");
+
+      if (error) throw error;
+
+      if (data.user) {
+        toast({
+          title: "Account created successfully",
+          description: "Welcome to RestaurantOS! Please check your email to verify your account.",
+        });
+        // Don't navigate immediately as they need to verify their email first
+      }
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      toast({
+        title: "Signup failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -37,6 +84,7 @@ const SignUpPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              placeholder="Enter your email"
             />
           </div>
           <div>
@@ -46,6 +94,7 @@ const SignUpPage = () => {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               required
+              placeholder="Enter your phone number"
             />
           </div>
           <div>
@@ -55,10 +104,12 @@ const SignUpPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              placeholder="Choose a password"
+              minLength={6}
             />
           </div>
-          <Button type="submit" className="w-full">
-            Sign Up
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Creating account..." : "Sign Up"}
           </Button>
         </form>
         <p className="mt-4 text-center text-sm text-gray-600">
