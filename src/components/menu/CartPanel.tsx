@@ -40,7 +40,7 @@ const CartPanel = ({
     <>
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-8 right-4 shadow-lg rounded-full px-6 py-6"
+        className="fixed bottom-16 right-4 shadow-lg rounded-full px-6 py-6"
       >
         <ShoppingCart className="w-5 h-5 mr-2" />
         {itemCount} {itemText} Added
