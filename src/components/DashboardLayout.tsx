@@ -18,17 +18,33 @@ import {
   LogOut,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const DashboardLayout = () => {
+  // Add authentication check at the layout level
+  useRequireAuth();
+  
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogout = () => {
-    // TODO: Implement actual logout
-    toast({
-      title: "Logged out successfully",
-    });
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: "Logged out successfully",
+      });
+      navigate("/");
+    } catch (error: any) {
+      console.error("Logout error:", error);
+      toast({
+        title: "Logout failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const menuItems = [
