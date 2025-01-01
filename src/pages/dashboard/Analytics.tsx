@@ -1,9 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfToday, startOfMonth, format, parseISO, subMonths } from "date-fns";
-import { ShoppingCart, Users, PieChart } from "lucide-react";
 import { RevenueCard } from "@/components/analytics/RevenueCard";
 import { MetricCard } from "@/components/analytics/MetricCard";
 import { OrdersChart } from "@/components/analytics/OrdersChart";
@@ -173,6 +172,12 @@ const fetchAnalytics = async (): Promise<OrderAnalytics> => {
 
 const Analytics = () => {
   const navigate = useNavigate();
+  const [selectedPeriods, setSelectedPeriods] = useState({
+    revenue: 'today',
+    transactions: 'today',
+    orders: 'today',
+    topSelling: 'today'
+  });
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -189,12 +194,31 @@ const Analytics = () => {
   const { data: analytics, isLoading } = useQuery({
     queryKey: ['analytics'],
     queryFn: fetchAnalytics,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 30000,
   });
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen">Loading analytics...</div>;
   }
+
+  const periods = {
+    revenue: [
+      { value: 'today', label: "Today's Revenue" },
+      { value: 'month', label: "This Month's Revenue" }
+    ],
+    transactions: [
+      { value: 'today', label: "Today's Transactions" },
+      { value: 'month', label: "This Month's Transactions" }
+    ],
+    orders: [
+      { value: 'today', label: "Today's Orders" },
+      { value: 'month', label: "This Month's Orders" }
+    ],
+    topSelling: [
+      { value: 'today', label: "Today's Top Seller" },
+      { value: 'month', label: "This Month's Top Seller" }
+    ]
+  };
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -202,45 +226,43 @@ const Analytics = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <RevenueCard
-          title="Today's Revenue"
-          amount={analytics?.todayRevenue || 0}
-        />
-        <RevenueCard
-          title="This Month's Revenue"
-          amount={analytics?.monthlyRevenue || 0}
+          title="Revenue"
+          amount={selectedPeriods.revenue === 'today' ? analytics?.todayRevenue || 0 : analytics?.monthlyRevenue || 0}
           previousAmount={analytics?.previousMonthRevenue}
-          showComparison
+          showComparison={selectedPeriods.revenue === 'month'}
+          onPeriodChange={(period) => setSelectedPeriods(prev => ({ ...prev, revenue: period }))}
+          periods={periods.revenue}
+        />
+        <MetricCard
+          title="Transactions"
+          value={selectedPeriods.transactions === 'today' ? analytics?.todayTransactions || 0 : analytics?.monthlyTransactions || 0}
+          previousValue={selectedPeriods.transactions === 'month' ? analytics?.todayTransactions : undefined}
+          showComparison={selectedPeriods.transactions === 'month'}
+          onPeriodChange={(period) => setSelectedPeriods(prev => ({ ...prev, transactions: period }))}
+          periods={periods.transactions}
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <MetricCard
-          title="Total Transactions Today"
-          value={analytics?.todayTransactions || 0}
-          previousValue={analytics?.monthlyTransactions}
-          showComparison
-          Icon={Users}
+          title="Orders"
+          value={selectedPeriods.orders === 'today' ? analytics?.todayOrders || 0 : analytics?.monthlyOrders || 0}
+          previousValue={selectedPeriods.orders === 'month' ? analytics?.todayOrders : undefined}
+          showComparison={selectedPeriods.orders === 'month'}
+          onPeriodChange={(period) => setSelectedPeriods(prev => ({ ...prev, orders: period }))}
+          periods={periods.orders}
         />
         <MetricCard
-          title="Total Orders Today"
-          value={analytics?.todayOrders || 0}
-          previousValue={analytics?.monthlyOrders}
-          showComparison
-          Icon={ShoppingCart}
+          title="Top Selling Item"
+          value={1}
+          previousValue={undefined}
+          showComparison={false}
+          onPeriodChange={(period) => setSelectedPeriods(prev => ({ ...prev, topSelling: period }))}
+          periods={periods.topSelling}
         />
       </div>
 
       <OrdersChart data={analytics?.hourlyOrders || []} />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-        <MetricCard
-          title="Today's Most Selling Item"
-          value={1}
-          Icon={PieChart}
-          previousValue={undefined}
-          showComparison={false}
-        />
-      </div>
     </div>
   );
 };
