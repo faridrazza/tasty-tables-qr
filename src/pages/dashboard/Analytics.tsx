@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfToday, startOfMonth, format, parseISO, subMonths } from "date-fns";
-import { RevenueCard } from "@/components/analytics/RevenueCard";
-import { MetricCard } from "@/components/analytics/MetricCard";
+import { SimpleMetricCard } from "@/components/analytics/SimpleMetricCard";
+import { TopSellingCard } from "@/components/analytics/TopSellingCard";
 import { OrdersChart } from "@/components/analytics/OrdersChart";
 
 interface OrderAnalytics {
@@ -16,7 +16,9 @@ interface OrderAnalytics {
   todayTransactions: number;
   monthlyTransactions: number;
   topSellingItem: string;
+  topSellingItemCount: number;
   monthlyTopSellingItem: string;
+  monthlyTopSellingItemCount: number;
   hourlyOrders: { hour: string; orders: number }[];
 }
 
@@ -145,16 +147,16 @@ const fetchAnalytics = async (): Promise<OrderAnalytics> => {
     orders,
   }));
 
-  // Find top selling items
-  const topSellingItem = Object.entries(itemSales).reduce(
+  // Find top selling items with counts
+  const topSellingItemData = Object.entries(itemSales).reduce(
     (max, [item, count]) => (count > max[1] ? [item, count] : max),
     ['', 0]
-  )[0];
+  );
 
-  const monthlyTopSellingItem = Object.entries(monthlyItemSales).reduce(
+  const monthlyTopSellingItemData = Object.entries(monthlyItemSales).reduce(
     (max, [item, count]) => (count > max[1] ? [item, count] : max),
     ['', 0]
-  )[0];
+  );
 
   return {
     todayRevenue,
@@ -164,20 +166,16 @@ const fetchAnalytics = async (): Promise<OrderAnalytics> => {
     monthlyOrders: monthlyOrders?.length || 0,
     todayTransactions: todayOrders?.length || 0,
     monthlyTransactions: monthlyOrders?.length || 0,
-    topSellingItem: topSellingItem || 'No orders today',
-    monthlyTopSellingItem: monthlyTopSellingItem || 'No orders this month',
+    topSellingItem: topSellingItemData[0] || 'No orders today',
+    topSellingItemCount: topSellingItemData[1] as number,
+    monthlyTopSellingItem: monthlyTopSellingItemData[0] || 'No orders this month',
+    monthlyTopSellingItemCount: monthlyTopSellingItemData[1] as number,
     hourlyOrders: hourlyOrdersArray,
   };
 };
 
 const Analytics = () => {
   const navigate = useNavigate();
-  const [selectedPeriods, setSelectedPeriods] = useState({
-    revenue: 'today',
-    transactions: 'today',
-    orders: 'today',
-    topSelling: 'today'
-  });
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -201,64 +199,41 @@ const Analytics = () => {
     return <div className="flex justify-center items-center h-screen">Loading analytics...</div>;
   }
 
-  const periods = {
-    revenue: [
-      { value: 'today', label: "Today's Revenue" },
-      { value: 'month', label: "This Month's Revenue" }
-    ],
-    transactions: [
-      { value: 'today', label: "Today's Transactions" },
-      { value: 'month', label: "This Month's Transactions" }
-    ],
-    orders: [
-      { value: 'today', label: "Today's Orders" },
-      { value: 'month', label: "This Month's Orders" }
-    ],
-    topSelling: [
-      { value: 'today', label: "Today's Top Seller" },
-      { value: 'month', label: "This Month's Top Seller" }
-    ]
-  };
-
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h1 className="text-2xl font-bold text-primary mb-6">Analytics</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <RevenueCard
-          title="Revenue"
-          amount={selectedPeriods.revenue === 'today' ? analytics?.todayRevenue || 0 : analytics?.monthlyRevenue || 0}
-          previousAmount={analytics?.previousMonthRevenue}
-          showComparison={selectedPeriods.revenue === 'month'}
-          onPeriodChange={(period) => setSelectedPeriods(prev => ({ ...prev, revenue: period }))}
-          periods={periods.revenue}
+        <SimpleMetricCard
+          title="Today's Revenue"
+          value={`₹${analytics?.todayRevenue.toFixed(2) || '0.00'}`}
         />
-        <MetricCard
-          title="Transactions"
-          value={selectedPeriods.transactions === 'today' ? analytics?.todayTransactions || 0 : analytics?.monthlyTransactions || 0}
-          previousValue={selectedPeriods.transactions === 'month' ? analytics?.todayTransactions : undefined}
-          showComparison={selectedPeriods.transactions === 'month'}
-          onPeriodChange={(period) => setSelectedPeriods(prev => ({ ...prev, transactions: period }))}
-          periods={periods.transactions}
+        <SimpleMetricCard
+          title="This Month's Revenue"
+          value={`₹${analytics?.monthlyRevenue.toFixed(2) || '0.00'}`}
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <MetricCard
-          title="Orders"
-          value={selectedPeriods.orders === 'today' ? analytics?.todayOrders || 0 : analytics?.monthlyOrders || 0}
-          previousValue={selectedPeriods.orders === 'month' ? analytics?.todayOrders : undefined}
-          showComparison={selectedPeriods.orders === 'month'}
-          onPeriodChange={(period) => setSelectedPeriods(prev => ({ ...prev, orders: period }))}
-          periods={periods.orders}
+        <SimpleMetricCard
+          title="Previous Month's Revenue"
+          value={`₹${analytics?.previousMonthRevenue.toFixed(2) || '0.00'}`}
         />
-        <MetricCard
-          title="Top Selling Item"
-          value={1}
-          previousValue={undefined}
-          showComparison={false}
-          onPeriodChange={(period) => setSelectedPeriods(prev => ({ ...prev, topSelling: period }))}
-          periods={periods.topSelling}
+        <SimpleMetricCard
+          title="This Month's Total Transactions"
+          value={analytics?.monthlyTransactions || 0}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <SimpleMetricCard
+          title="This Month's Total Orders"
+          value={analytics?.monthlyOrders || 0}
+        />
+        <TopSellingCard
+          title="This Month's Top Selling Item"
+          itemName={analytics?.monthlyTopSellingItem || 'No orders'}
+          count={analytics?.monthlyTopSellingItemCount || 0}
         />
       </div>
 
