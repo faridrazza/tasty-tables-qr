@@ -1,37 +1,30 @@
-import {
-  BarChart as RechartsBarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { startOfToday, startOfMonth, format, parseISO } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { startOfToday, startOfMonth, format, parseISO, subMonths } from "date-fns";
+import { ShoppingCart, Users, PieChart } from "lucide-react";
+import { RevenueCard } from "@/components/analytics/RevenueCard";
+import { MetricCard } from "@/components/analytics/MetricCard";
+import { OrdersChart } from "@/components/analytics/OrdersChart";
 
 interface OrderAnalytics {
   todayRevenue: number;
-  todayOrders: number;
-  topSellingItem: string;
+  previousMonthRevenue: number;
   monthlyRevenue: number;
+  todayOrders: number;
+  monthlyOrders: number;
+  todayTransactions: number;
+  monthlyTransactions: number;
+  topSellingItem: string;
+  monthlyTopSellingItem: string;
   hourlyOrders: { hour: string; orders: number }[];
 }
 
 const fetchAnalytics = async (): Promise<OrderAnalytics> => {
   const today = startOfToday();
   const startOfCurrentMonth = startOfMonth(new Date());
+  const startOfPreviousMonth = startOfMonth(subMonths(new Date(), 1));
 
   // Fetch today's orders
   const { data: todayOrders, error: todayError } = await supabase
@@ -55,7 +48,7 @@ const fetchAnalytics = async (): Promise<OrderAnalytics> => {
 
   if (todayError) throw todayError;
 
-  // Fetch monthly orders for revenue calculation
+  // Fetch monthly orders
   const { data: monthlyOrders, error: monthlyError } = await supabase
     .from('orders')
     .select(`
@@ -77,40 +70,69 @@ const fetchAnalytics = async (): Promise<OrderAnalytics> => {
 
   if (monthlyError) throw monthlyError;
 
-  // Calculate today's revenue and item sales
-  const itemSales: { [key: string]: number } = {};
-  let todayRevenue = 0;
+  // Fetch previous month's orders
+  const { data: previousMonthOrders, error: previousMonthError } = await supabase
+    .from('orders')
+    .select(`
+      id,
+      created_at,
+      order_items (
+        quantity,
+        size,
+        menu_item_id,
+        menu_item:menu_items (
+          name,
+          half_price,
+          full_price
+        )
+      )
+    `)
+    .gte('created_at', startOfPreviousMonth.toISOString())
+    .lt('created_at', startOfCurrentMonth.toISOString())
+    .neq('status', 'cancelled');
 
+  if (previousMonthError) throw previousMonthError;
+
+  // Calculate metrics
+  let todayRevenue = 0;
+  let monthlyRevenue = 0;
+  let previousMonthRevenue = 0;
+  const itemSales: { [key: string]: number } = {};
+  const monthlyItemSales: { [key: string]: number } = {};
+
+  // Calculate today's metrics
   todayOrders?.forEach(order => {
     order.order_items?.forEach(item => {
       if (item.menu_item) {
-        // Add to item sales count
         const itemName = item.menu_item.name;
         itemSales[itemName] = (itemSales[itemName] || 0) + item.quantity;
-
-        // Calculate revenue
         const price = item.size === 'half' ? item.menu_item.half_price : item.menu_item.full_price;
         todayRevenue += price * item.quantity;
       }
     });
   });
 
-  // Calculate monthly revenue
-  let monthlyRevenue = 0;
+  // Calculate monthly metrics
   monthlyOrders?.forEach(order => {
     order.order_items?.forEach(item => {
       if (item.menu_item) {
+        const itemName = item.menu_item.name;
+        monthlyItemSales[itemName] = (monthlyItemSales[itemName] || 0) + item.quantity;
         const price = item.size === 'half' ? item.menu_item.half_price : item.menu_item.full_price;
         monthlyRevenue += price * item.quantity;
       }
     });
   });
 
-  // Find top selling item
-  const topSellingItem = Object.entries(itemSales).reduce(
-    (max, [item, count]) => (count > max[1] ? [item, count] : max),
-    ['', 0]
-  )[0];
+  // Calculate previous month's revenue
+  previousMonthOrders?.forEach(order => {
+    order.order_items?.forEach(item => {
+      if (item.menu_item) {
+        const price = item.size === 'half' ? item.menu_item.half_price : item.menu_item.full_price;
+        previousMonthRevenue += price * item.quantity;
+      }
+    });
+  });
 
   // Calculate hourly orders
   const hourlyOrders: { [key: string]: number } = {};
@@ -124,11 +146,27 @@ const fetchAnalytics = async (): Promise<OrderAnalytics> => {
     orders,
   }));
 
+  // Find top selling items
+  const topSellingItem = Object.entries(itemSales).reduce(
+    (max, [item, count]) => (count > max[1] ? [item, count] : max),
+    ['', 0]
+  )[0];
+
+  const monthlyTopSellingItem = Object.entries(monthlyItemSales).reduce(
+    (max, [item, count]) => (count > max[1] ? [item, count] : max),
+    ['', 0]
+  )[0];
+
   return {
     todayRevenue,
-    todayOrders: todayOrders?.length || 0,
-    topSellingItem: topSellingItem || 'No orders today',
+    previousMonthRevenue,
     monthlyRevenue,
+    todayOrders: todayOrders?.length || 0,
+    monthlyOrders: monthlyOrders?.length || 0,
+    todayTransactions: todayOrders?.length || 0,
+    monthlyTransactions: monthlyOrders?.length || 0,
+    topSellingItem: topSellingItem || 'No orders today',
+    monthlyTopSellingItem: monthlyTopSellingItem || 'No orders this month',
     hourlyOrders: hourlyOrdersArray,
   };
 };
@@ -136,7 +174,6 @@ const fetchAnalytics = async (): Promise<OrderAnalytics> => {
 const Analytics = () => {
   const navigate = useNavigate();
 
-  // Check authentication status immediately
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -149,9 +186,6 @@ const Analytics = () => {
     checkAuth();
   }, [navigate]);
 
-  // Also use the hook for continuous auth monitoring
-  useRequireAuth();
-
   const { data: analytics, isLoading } = useQuery({
     queryKey: ['analytics'],
     queryFn: fetchAnalytics,
@@ -163,54 +197,49 @@ const Analytics = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-primary">Analytics</h1>
-        <Select defaultValue="today">
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select period" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="today">Today</SelectItem>
-            <SelectItem value="week">Last 7 days</SelectItem>
-            <SelectItem value="month">Last month</SelectItem>
-          </SelectContent>
-        </Select>
+    <div className="max-w-6xl mx-auto p-6">
+      <h1 className="text-2xl font-bold text-primary mb-6">Analytics</h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <RevenueCard
+          title="Today's Revenue"
+          amount={analytics?.todayRevenue || 0}
+        />
+        <RevenueCard
+          title="This Month's Revenue"
+          amount={analytics?.monthlyRevenue || 0}
+          previousAmount={analytics?.previousMonthRevenue}
+          showComparison
+        />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <h3 className="text-lg font-semibold mb-2">Most Ordered Today</h3>
-          <p className="text-3xl font-bold text-primary">{analytics?.topSellingItem}</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <h3 className="text-lg font-semibold mb-2">Revenue Overview</h3>
-          <div className="space-y-2">
-            <div>
-              <p className="text-sm text-gray-600">Today's Revenue</p>
-              <p className="text-2xl font-bold text-primary">₹{analytics?.todayRevenue.toFixed(2)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">This Month's Revenue</p>
-              <p className="text-2xl font-bold text-primary">₹{analytics?.monthlyRevenue.toFixed(2)}</p>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <MetricCard
+          title="Total Transactions Today"
+          value={analytics?.todayTransactions || 0}
+          previousValue={analytics?.monthlyTransactions}
+          showComparison
+          Icon={Users}
+        />
+        <MetricCard
+          title="Total Orders Today"
+          value={analytics?.todayOrders || 0}
+          previousValue={analytics?.monthlyOrders}
+          showComparison
+          Icon={ShoppingCart}
+        />
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-sm">
-        <h3 className="text-lg font-semibold mb-4">Orders by Hour</h3>
-        <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <RechartsBarChart data={analytics?.hourlyOrders || []}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="hour" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="orders" fill="#1E3A8A" />
-            </RechartsBarChart>
-          </ResponsiveContainer>
-        </div>
+      <OrdersChart data={analytics?.hourlyOrders || []} />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <MetricCard
+          title="Today's Most Selling Item"
+          value={1}
+          Icon={PieChart}
+          previousValue={undefined}
+          showComparison={false}
+        />
       </div>
     </div>
   );
