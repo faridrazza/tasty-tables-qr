@@ -5,6 +5,8 @@ interface OrderItem {
   size: string;
   menu_item: {
     name: string;
+    half_price?: number;
+    full_price?: number;
   };
 }
 

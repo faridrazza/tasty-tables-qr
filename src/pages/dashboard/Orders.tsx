@@ -14,6 +14,10 @@ import { OrderStatus } from "@/components/orders/OrderStatus";
 import { OrderItems } from "@/components/orders/OrderItems";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { OrderDocumentActions } from "@/components/orders/OrderDocumentActions";
+import { KOTTemplate } from "@/components/orders/KOTTemplate";
+import { BillTemplate } from "@/components/orders/BillTemplate";
+import { printContent, downloadPDF } from "@/utils/printUtils";
 
 interface OrderItem {
   id: string;
@@ -22,6 +26,8 @@ interface OrderItem {
   size: string;
   menu_item: {
     name: string;
+    half_price: number;
+    full_price: number;
   };
 }
 
@@ -34,9 +40,7 @@ interface Order {
 }
 
 const Orders = () => {
-  // Add authentication check
   useRequireAuth();
-  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -51,7 +55,9 @@ const Orders = () => {
           order_items (
             *,
             menu_item:menu_items (
-              name
+              name,
+              half_price,
+              full_price
             )
           )
         `)
@@ -63,6 +69,19 @@ const Orders = () => {
       }
       console.log("Orders fetched:", data);
       return data as Order[];
+    },
+  });
+
+  const { data: gstSettings } = useQuery({
+    queryKey: ["gst-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("gst_settings")
+        .select("*")
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
     },
   });
 
@@ -106,6 +125,43 @@ const Orders = () => {
     updateOrderStatus.mutate({ orderId, status });
   };
 
+  const calculateSubtotal = (items: OrderItem[]) => {
+    return items.reduce((total, item) => {
+      const price = item.size === 'full' ? item.menu_item.full_price : item.menu_item.half_price;
+      return total + (price * item.quantity);
+    }, 0);
+  };
+
+  const handleKOTActions = (order: Order) => {
+    const kotContent = KOTTemplate({
+      orderItems: order.order_items,
+      tableNumber: order.table_number,
+      orderTime: order.created_at,
+    });
+
+    return {
+      view: () => printContent(kotContent),
+      print: () => printContent(kotContent),
+    };
+  };
+
+  const handleBillActions = (order: Order) => {
+    const subtotal = calculateSubtotal(order.order_items);
+    const billContent = BillTemplate({
+      orderItems: order.order_items,
+      tableNumber: order.table_number,
+      orderTime: order.created_at,
+      gstSettings,
+      subtotal,
+    });
+
+    return {
+      view: () => printContent(billContent),
+      print: () => printContent(billContent),
+      download: () => downloadPDF(billContent, `bill-${order.id}.pdf`),
+    };
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -126,7 +182,7 @@ const Orders = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Orders Management</h1>
       <div className="bg-white rounded-lg shadow">
         <Table>
@@ -136,31 +192,51 @@ const Orders = () => {
               <TableHead>Items</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Time</TableHead>
+              <TableHead>KOT</TableHead>
+              <TableHead>Bill</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {orders?.map((order) => (
-              <TableRow key={order.id}>
-                <TableCell>Table {order.table_number}</TableCell>
-                <TableCell>
-                  <OrderItems items={order.order_items} />
-                </TableCell>
-                <TableCell>
-                  <StatusBadge status={order.status} />
-                </TableCell>
-                <TableCell>
-                  {new Date(order.created_at).toLocaleString()}
-                </TableCell>
-                <TableCell>
-                  <OrderStatus
-                    status={order.status}
-                    orderId={order.id}
-                    onUpdateStatus={handleUpdateStatus}
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
+            {orders?.map((order) => {
+              const kotActions = handleKOTActions(order);
+              const billActions = handleBillActions(order);
+              
+              return (
+                <TableRow key={order.id}>
+                  <TableCell>Table {order.table_number}</TableCell>
+                  <TableCell>
+                    <OrderItems items={order.order_items} />
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={order.status} />
+                  </TableCell>
+                  <TableCell>
+                    {new Date(order.created_at).toLocaleString()}
+                  </TableCell>
+                  <TableCell>
+                    <OrderDocumentActions
+                      onView={kotActions.view}
+                      onPrint={kotActions.print}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <OrderDocumentActions
+                      onView={billActions.view}
+                      onPrint={billActions.print}
+                      onDownload={billActions.download}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <OrderStatus
+                      status={order.status}
+                      orderId={order.id}
+                      onUpdateStatus={handleUpdateStatus}
+                    />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
