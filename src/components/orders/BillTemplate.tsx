@@ -34,12 +34,16 @@ export const BillTemplate = ({ orderItems, tableNumber, orderTime, gstSettings, 
           <th style="text-align: left;">Item</th>
           <th style="text-align: right;">Amount</th>
         </tr>
-        ${orderItems.map(item => `
-          <tr>
-            <td>${item.quantity}x ${item.menu_item.name} (${item.size})</td>
-            <td style="text-align: right;">${formatCurrency(item.price || 0)}</td>
-          </tr>
-        `).join('')}
+        ${orderItems.map(item => {
+          const price = item.size === 'full' ? item.menu_item.full_price : item.menu_item.half_price;
+          const itemTotal = (price || 0) * item.quantity;
+          return `
+            <tr>
+              <td>${item.quantity}x ${item.menu_item.name} (${item.size})</td>
+              <td style="text-align: right;">${formatCurrency(itemTotal)}</td>
+            </tr>
+          `;
+        }).join('')}
       </table>
 
       <div style="margin-top: 20px; border-top: 1px solid #000;">

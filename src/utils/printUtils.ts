@@ -7,14 +7,35 @@ export const printContent = (content: string) => {
   }
 };
 
+export const viewContent = (content: string) => {
+  const viewWindow = window.open('', '_blank');
+  if (viewWindow) {
+    viewWindow.document.write(content);
+    viewWindow.document.close();
+  }
+};
+
 export const downloadPDF = (content: string, filename: string) => {
-  const element = document.createElement('a');
-  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
-  element.setAttribute('download', filename);
-  element.style.display = 'none';
-  document.body.appendChild(element);
-  element.click();
-  document.body.removeChild(element);
+  const element = document.createElement('div');
+  element.innerHTML = content;
+  
+  const style = document.createElement('style');
+  style.textContent = `
+    @page { size: A4; margin: 2cm; }
+    body { font-family: Arial, sans-serif; }
+  `;
+  element.prepend(style);
+
+  const blob = new Blob([element.outerHTML], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 };
 
 export const formatCurrency = (amount: number) => {
