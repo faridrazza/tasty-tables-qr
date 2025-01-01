@@ -6,6 +6,7 @@ import { startOfToday, startOfMonth, format, parseISO, subMonths } from "date-fn
 import { SimpleMetricCard } from "@/components/analytics/SimpleMetricCard";
 import { TopSellingCard } from "@/components/analytics/TopSellingCard";
 import { OrdersChart } from "@/components/analytics/OrdersChart";
+import { RevenueCard } from "@/components/analytics/RevenueCard";
 
 interface OrderAnalytics {
   todayRevenue: number;
@@ -192,11 +193,22 @@ const Analytics = () => {
   const { data: analytics, isLoading } = useQuery({
     queryKey: ['analytics'],
     queryFn: fetchAnalytics,
-    refetchInterval: 30000,
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen">Loading analytics...</div>;
+  }
+
+  const hasData = analytics && Object.values(analytics).some(value => 
+    typeof value === 'number' ? value > 0 : value !== null && value !== undefined
+  );
+
+  if (!hasData) {
+    return <div className="max-w-6xl mx-auto p-6">
+      <h1 className="text-2xl font-bold text-primary mb-6">Analytics</h1>
+      <div className="text-center text-gray-500">Not enough data available.</div>
+    </div>;
   }
 
   return (
@@ -206,38 +218,49 @@ const Analytics = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <SimpleMetricCard
           title="Today's Revenue"
-          value={`₹${analytics?.todayRevenue.toFixed(2) || '0.00'}`}
+          value={analytics?.todayRevenue ? `₹${analytics.todayRevenue.toFixed(2)}` : 'Not enough data available'}
         />
         <SimpleMetricCard
           title="This Month's Revenue"
-          value={`₹${analytics?.monthlyRevenue.toFixed(2) || '0.00'}`}
+          value={analytics?.monthlyRevenue ? `₹${analytics.monthlyRevenue.toFixed(2)}` : 'Not enough data available'}
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <SimpleMetricCard
           title="Previous Month's Revenue"
-          value={`₹${analytics?.previousMonthRevenue.toFixed(2) || '0.00'}`}
+          value={analytics?.previousMonthRevenue ? `₹${analytics.previousMonthRevenue.toFixed(2)}` : 'Not enough data available'}
         />
         <SimpleMetricCard
           title="This Month's Total Transactions"
-          value={analytics?.monthlyTransactions || 0}
+          value={analytics?.monthlyTransactions || 'Not enough data available'}
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <SimpleMetricCard
           title="This Month's Total Orders"
-          value={analytics?.monthlyOrders || 0}
+          value={analytics?.monthlyOrders || 'Not enough data available'}
         />
         <TopSellingCard
           title="This Month's Top Selling Item"
-          itemName={analytics?.monthlyTopSellingItem || 'No orders'}
+          itemName={analytics?.monthlyTopSellingItem || 'Not enough data available'}
           count={analytics?.monthlyTopSellingItemCount || 0}
         />
       </div>
 
       <OrdersChart data={analytics?.hourlyOrders || []} />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <SimpleMetricCard
+          title="Today's Total Orders"
+          value={analytics?.todayOrders || 'Not enough data available'}
+        />
+        <SimpleMetricCard
+          title="Today's Total Transactions"
+          value={analytics?.todayTransactions || 'Not enough data available'}
+        />
+      </div>
     </div>
   );
 };
