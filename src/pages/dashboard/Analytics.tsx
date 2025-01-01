@@ -3,25 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfToday, startOfMonth, format, parseISO, subMonths } from "date-fns";
-import { SimpleMetricCard } from "@/components/analytics/SimpleMetricCard";
-import { TopSellingCard } from "@/components/analytics/TopSellingCard";
-import { OrdersChart } from "@/components/analytics/OrdersChart";
-import { RevenueCard } from "@/components/analytics/RevenueCard";
-
-interface OrderAnalytics {
-  todayRevenue: number;
-  previousMonthRevenue: number;
-  monthlyRevenue: number;
-  todayOrders: number;
-  monthlyOrders: number;
-  todayTransactions: number;
-  monthlyTransactions: number;
-  topSellingItem: string;
-  topSellingItemCount: number;
-  monthlyTopSellingItem: string;
-  monthlyTopSellingItemCount: number;
-  hourlyOrders: { hour: string; orders: number }[];
-}
+import { AnalyticsGrid } from "@/components/analytics/AnalyticsGrid";
+import type { OrderAnalytics } from "@/types/analytics";
 
 const fetchAnalytics = async (): Promise<OrderAnalytics> => {
   const today = startOfToday();
@@ -214,53 +197,7 @@ const Analytics = () => {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h1 className="text-2xl font-bold text-primary mb-6">Analytics</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <SimpleMetricCard
-          title="Today's Revenue"
-          value={analytics?.todayRevenue ? `₹${analytics.todayRevenue.toFixed(2)}` : 'Not enough data available'}
-        />
-        <SimpleMetricCard
-          title="This Month's Revenue"
-          value={analytics?.monthlyRevenue ? `₹${analytics.monthlyRevenue.toFixed(2)}` : 'Not enough data available'}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <SimpleMetricCard
-          title="Previous Month's Revenue"
-          value={analytics?.previousMonthRevenue ? `₹${analytics.previousMonthRevenue.toFixed(2)}` : 'Not enough data available'}
-        />
-        <SimpleMetricCard
-          title="This Month's Total Transactions"
-          value={analytics?.monthlyTransactions || 'Not enough data available'}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <SimpleMetricCard
-          title="This Month's Total Orders"
-          value={analytics?.monthlyOrders || 'Not enough data available'}
-        />
-        <TopSellingCard
-          title="This Month's Top Selling Item"
-          itemName={analytics?.monthlyTopSellingItem || 'Not enough data available'}
-          count={analytics?.monthlyTopSellingItemCount || 0}
-        />
-      </div>
-
-      <OrdersChart data={analytics?.hourlyOrders || []} />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-        <SimpleMetricCard
-          title="Today's Total Orders"
-          value={analytics?.todayOrders || 'Not enough data available'}
-        />
-        <SimpleMetricCard
-          title="Today's Total Transactions"
-          value={analytics?.todayTransactions || 'Not enough data available'}
-        />
-      </div>
+      <AnalyticsGrid analytics={analytics} />
     </div>
   );
 };
