@@ -19,9 +19,9 @@ const MenuItem = ({ item, onAddToCart }: MenuItemProps) => {
         <div className="flex justify-between items-center mb-4">
           <div>
             {item.halfPrice > 0 && (
-              <p className="text-sm text-gray-600">Half: ${item.halfPrice}</p>
+              <p className="text-sm text-gray-600">Half: ₹{item.halfPrice}</p>
             )}
-            <p className="text-sm text-gray-600">Full: ${item.fullPrice}</p>
+            <p className="text-sm text-gray-600">Full: ₹{item.fullPrice}</p>
           </div>
           {item.outOfStock ? (
             <span className="text-red-500 font-medium">Out of Stock</span>
