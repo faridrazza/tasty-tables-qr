@@ -47,12 +47,12 @@ const CartPanel = ({
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md flex flex-col max-h-[90vh]">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Your Order</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-4">
+          <div className="flex flex-col h-full">
+            <div className="flex-shrink-0 mb-4">
               <Input
                 type="number"
                 placeholder="Table Number"
@@ -61,6 +61,8 @@ const CartPanel = ({
                 className="w-full"
                 disabled={isPlacingOrder}
               />
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-4 mb-4">
               {cart.map((item) => (
                 <div
                   key={`${item.id}-${item.size}`}
@@ -106,23 +108,25 @@ const CartPanel = ({
                 </div>
               ))}
             </div>
-            <Button
-              className="w-full"
-              onClick={() => {
-                onPlaceOrder();
-                if (!isPlacingOrder) {
-                  setIsOpen(false);
-                }
-              }}
-              disabled={isPlacingOrder}
-            >
-              {isPlacingOrder ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <ShoppingCart className="w-4 h-4 mr-2" />
-              )}
-              {isPlacingOrder ? "Placing Order..." : "Place Order"}
-            </Button>
+            <div className="flex-shrink-0">
+              <Button
+                className="w-full"
+                onClick={() => {
+                  onPlaceOrder();
+                  if (!isPlacingOrder) {
+                    setIsOpen(false);
+                  }
+                }}
+                disabled={isPlacingOrder}
+              >
+                {isPlacingOrder ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                )}
+                {isPlacingOrder ? "Placing Order..." : "Place Order"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

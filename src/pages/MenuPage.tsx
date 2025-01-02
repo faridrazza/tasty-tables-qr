@@ -35,6 +35,8 @@ const MenuPage = () => {
             halfPrice: item.half_price,
             fullPrice: item.full_price,
             outOfStock: item.out_of_stock,
+            isVegetarian: item.is_vegetarian,
+            category: item.category,
           }))
         );
       } catch (error: any) {
@@ -70,11 +72,6 @@ const MenuPage = () => {
     } else {
       setCart([...cart, { ...item, quantity: 1, size }]);
     }
-
-    toast({
-      title: "Added to cart",
-      description: `${item.name} (${size}) added to your order.`,
-    });
   };
 
   const removeFromCart = (itemId: string, size: "half" | "full") => {
