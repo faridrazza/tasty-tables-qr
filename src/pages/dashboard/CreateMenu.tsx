@@ -17,13 +17,7 @@ const CreateMenu = () => {
     handleSaveItem,
     handleDeleteItem,
     handleToggleOutOfStock,
-    isLoading,
-    error
   } = useMenuItems();
-
-  if (error) {
-    console.error("Error loading menu items:", error);
-  }
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -57,7 +51,6 @@ const CreateMenu = () => {
         items={menuItems} 
         onDelete={handleDeleteItem}
         onToggleOutOfStock={handleToggleOutOfStock}
-        isLoading={isLoading}
       />
 
       {menuItems.length > 0 && !isCreating && (

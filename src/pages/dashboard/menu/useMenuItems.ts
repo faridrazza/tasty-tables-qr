@@ -7,54 +7,58 @@ import { MenuItem } from "@/types/menu";
 export const useMenuItems = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isCreating, setIsCreating] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [newItem, setNewItem] = useState<MenuItem>({
+    id: "",
+    name: "",
+    image: "",
+    halfPrice: 0,
+    fullPrice: 0,
+    outOfStock: false,
+  });
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const fetchMenuItems = async () => {
-    try {
-      setIsLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-      const { data, error: fetchError } = await supabase
-        .from("menu_items")
-        .select("*")
-        .eq("restaurant_id", user.id);
+    const { data, error } = await supabase
+      .from("menu_items")
+      .select("*")
+      .eq("restaurant_id", user.id);
 
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      setMenuItems(
-        data.map((item) => ({
-          id: item.id,
-          name: item.name,
-          image: item.image_url || "",
-          halfPrice: item.half_price,
-          fullPrice: item.full_price,
-          outOfStock: item.out_of_stock || false,
-        }))
-      );
-    } catch (err: any) {
-      console.error("Error fetching menu items:", err);
-      setError(err);
+    if (error) {
+      console.error("Error fetching menu items:", error);
       toast({
         title: "Error",
         description: "Failed to load menu items",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
+      return;
     }
+
+    setMenuItems(
+      data.map((item) => ({
+        id: item.id,
+        name: item.name,
+        image: item.image_url || "",
+        halfPrice: item.half_price,
+        fullPrice: item.full_price,
+        outOfStock: item.out_of_stock || false,
+      }))
+    );
   };
 
   const handleAddItem = () => {
     setIsCreating(true);
+    setNewItem({
+      id: Date.now().toString(),
+      name: "",
+      image: "",
+      halfPrice: 0,
+      fullPrice: 0,
+      outOfStock: false,
+    });
   };
 
   const handleSaveItem = async (newItem: MenuItem) => {
@@ -96,6 +100,14 @@ export const useMenuItems = () => {
 
       setMenuItems([...menuItems, { ...newItem, id: data.id }]);
       setIsCreating(false);
+      setNewItem({
+        id: "",
+        name: "",
+        image: "",
+        halfPrice: 0,
+        fullPrice: 0,
+        outOfStock: false,
+      });
 
       if (menuItems.length === 0) {
         toast({
@@ -109,11 +121,11 @@ export const useMenuItems = () => {
           description: "Menu item added successfully",
         });
       }
-    } catch (err: any) {
-      console.error("Error saving menu item:", err);
+    } catch (error: any) {
+      console.error("Error saving menu item:", error);
       toast({
         title: "Error",
-        description: err.message || "Failed to save menu item",
+        description: error.message || "Failed to save menu item",
         variant: "destructive",
       });
     }
@@ -135,11 +147,11 @@ export const useMenuItems = () => {
         title: "Item deleted",
         description: "The menu item has been removed.",
       });
-    } catch (err: any) {
-      console.error("Error deleting menu item:", err);
+    } catch (error: any) {
+      console.error("Error deleting menu item:", error);
       toast({
         title: "Error",
-        description: err.message || "Failed to delete menu item",
+        description: error.message || "Failed to delete menu item",
         variant: "destructive",
       });
     }
@@ -162,11 +174,11 @@ export const useMenuItems = () => {
         title: "Status Updated",
         description: `Item marked as ${!currentStatus ? 'out of stock' : 'in stock'}`,
       });
-    } catch (err: any) {
-      console.error("Error updating stock status:", err);
+    } catch (error: any) {
+      console.error("Error updating stock status:", error);
       toast({
         title: "Error",
-        description: err.message || "Failed to update stock status",
+        description: error.message || "Failed to update stock status",
         variant: "destructive",
       });
     }
@@ -184,7 +196,5 @@ export const useMenuItems = () => {
     handleSaveItem,
     handleDeleteItem,
     handleToggleOutOfStock,
-    isLoading,
-    error,
   };
 };
