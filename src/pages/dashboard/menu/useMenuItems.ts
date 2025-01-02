@@ -7,14 +7,6 @@ import { MenuItem } from "@/types/menu";
 export const useMenuItems = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isCreating, setIsCreating] = useState(false);
-  const [newItem, setNewItem] = useState<MenuItem>({
-    id: "",
-    name: "",
-    image: "",
-    halfPrice: 0,
-    fullPrice: 0,
-    outOfStock: false,
-  });
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -45,20 +37,14 @@ export const useMenuItems = () => {
         halfPrice: item.half_price,
         fullPrice: item.full_price,
         outOfStock: item.out_of_stock || false,
+        isVegetarian: item.is_vegetarian,
+        category: item.category,
       }))
     );
   };
 
   const handleAddItem = () => {
     setIsCreating(true);
-    setNewItem({
-      id: Date.now().toString(),
-      name: "",
-      image: "",
-      halfPrice: 0,
-      fullPrice: 0,
-      outOfStock: false,
-    });
   };
 
   const handleSaveItem = async (newItem: MenuItem) => {
@@ -83,44 +69,63 @@ export const useMenuItems = () => {
         return;
       }
 
-      const { data, error } = await supabase
-        .from("menu_items")
-        .insert({
-          name: newItem.name,
-          image_url: newItem.image,
-          half_price: newItem.halfPrice || null,
-          full_price: newItem.fullPrice,
-          out_of_stock: false,
-          restaurant_id: user.id,
-        })
-        .select()
-        .single();
+      const itemData = {
+        name: newItem.name,
+        image_url: newItem.image,
+        half_price: newItem.halfPrice || null,
+        full_price: newItem.fullPrice,
+        out_of_stock: false,
+        restaurant_id: user.id,
+        is_vegetarian: newItem.isVegetarian,
+        category: newItem.category,
+      };
+
+      let data, error;
+
+      if (newItem.id) {
+        // Update existing item
+        ({ data, error } = await supabase
+          .from("menu_items")
+          .update(itemData)
+          .eq("id", newItem.id)
+          .select()
+          .single());
+      } else {
+        // Insert new item
+        ({ data, error } = await supabase
+          .from("menu_items")
+          .insert(itemData)
+          .select()
+          .single());
+      }
 
       if (error) throw error;
 
-      setMenuItems([...menuItems, { ...newItem, id: data.id }]);
-      setIsCreating(false);
-      setNewItem({
-        id: "",
-        name: "",
-        image: "",
-        halfPrice: 0,
-        fullPrice: 0,
-        outOfStock: false,
-      });
-
-      if (menuItems.length === 0) {
+      if (newItem.id) {
+        setMenuItems(menuItems.map(item => 
+          item.id === newItem.id ? { ...newItem, id: data.id } : item
+        ));
         toast({
           title: "Success",
-          description: "First menu item added! Redirecting to QR code section...",
+          description: "Menu item updated successfully",
         });
-        setTimeout(() => navigate("/dashboard/qr-code"), 2000);
       } else {
-        toast({
-          title: "Success",
-          description: "Menu item added successfully",
-        });
+        setMenuItems([...menuItems, { ...newItem, id: data.id }]);
+        if (menuItems.length === 0) {
+          toast({
+            title: "Success",
+            description: "First menu item added! Redirecting to QR code section...",
+          });
+          setTimeout(() => navigate("/dashboard/qr-code"), 2000);
+        } else {
+          toast({
+            title: "Success",
+            description: "Menu item added successfully",
+          });
+        }
       }
+
+      setIsCreating(false);
     } catch (error: any) {
       console.error("Error saving menu item:", error);
       toast({

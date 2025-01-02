@@ -1,15 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Trash2 } from "lucide-react";
+import { Trash2, Edit } from "lucide-react";
 import { MenuItem } from "@/types/menu";
 
 interface MenuItemListProps {
   items: MenuItem[];
   onDelete: (id: string) => void;
   onToggleOutOfStock: (id: string, currentStatus: boolean) => void;
+  onEdit: (item: MenuItem) => void;
 }
 
-const MenuItemList = ({ items, onDelete, onToggleOutOfStock }: MenuItemListProps) => {
+const MenuItemList = ({ items, onDelete, onToggleOutOfStock, onEdit }: MenuItemListProps) => {
   return (
     <div className="space-y-6">
       {items.map((item) => (
@@ -18,7 +19,25 @@ const MenuItemList = ({ items, onDelete, onToggleOutOfStock }: MenuItemListProps
           className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
         >
           <div className="border-b border-gray-100 bg-gray-50/50 px-6 py-4">
-            <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
+              <div className="flex items-center space-x-2">
+                {item.isVegetarian !== undefined && (
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                    item.isVegetarian 
+                    ? "bg-green-100 text-green-800" 
+                    : "bg-red-100 text-red-800"
+                  }`}>
+                    {item.isVegetarian ? "Veg" : "Non-Veg"}
+                  </span>
+                )}
+                {item.category && (
+                  <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                    {item.category}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -58,14 +77,24 @@ const MenuItemList = ({ items, onDelete, onToggleOutOfStock }: MenuItemListProps
                 />
                 <span className="text-sm text-gray-600">Out of Stock</span>
               </div>
-              <Button
-                variant="destructive"
-                size="icon"
-                onClick={() => onDelete(item.id)}
-                className="hover:scale-105 transition-transform duration-200"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => onEdit(item)}
+                  className="hover:bg-primary hover:text-white transition-colors duration-200"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => onDelete(item.id)}
+                  className="hover:scale-105 transition-transform duration-200"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>

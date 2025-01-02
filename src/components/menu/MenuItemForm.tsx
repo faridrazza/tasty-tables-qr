@@ -28,6 +28,8 @@ const MenuItemForm = ({
     halfPrice: 0,
     fullPrice: 0,
     outOfStock: false,
+    isVegetarian: false,
+    category: "",
   });
 
   const handleUpdate = (field: keyof MenuItem, value: string | boolean | number) => {
@@ -103,6 +105,24 @@ const MenuItemForm = ({
               placeholder="Enter full price"
               className="border-gray-200 focus:border-primary focus:ring-primary"
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Category
+            </label>
+            <Input
+              value={item.category || ""}
+              onChange={(e) => handleUpdate("category", e.target.value)}
+              placeholder="Enter category (e.g., Ice Cream, Beverages)"
+              className="border-gray-200 focus:border-primary focus:ring-primary"
+            />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={item.isVegetarian}
+              onCheckedChange={(checked) => handleUpdate("isVegetarian", checked)}
+            />
+            <span className="text-sm text-gray-600">Vegetarian</span>
           </div>
         </div>
         <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-100">

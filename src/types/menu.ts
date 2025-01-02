@@ -5,6 +5,8 @@ export interface MenuItem {
   halfPrice: number;
   fullPrice: number;
   outOfStock: boolean;
+  isVegetarian?: boolean;
+  category?: string;
 }
 
 export interface CartItem extends MenuItem {

@@ -1,14 +1,20 @@
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Search } from "lucide-react";
 import MenuItemForm from "@/components/menu/MenuItemForm";
 import MenuItemList from "@/components/menu/MenuItemList";
 import { useNavigate } from "react-router-dom";
 import { useMenuItems } from "./menu/useMenuItems";
+import { useState } from "react";
+import { MenuItem } from "@/types/menu";
 
 const CreateMenu = () => {
   useRequireAuth();
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  
   const {
     menuItems,
     isCreating,
@@ -18,6 +24,29 @@ const CreateMenu = () => {
     handleDeleteItem,
     handleToggleOutOfStock,
   } = useMenuItems();
+
+  const filteredItems = menuItems.filter((item) => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      item.name.toLowerCase().includes(searchLower) ||
+      (item.category?.toLowerCase().includes(searchLower))
+    );
+  });
+
+  const handleEdit = (item: MenuItem) => {
+    setEditingItem(item);
+    setIsCreating(true);
+  };
+
+  const handleSave = async (item: MenuItem) => {
+    await handleSaveItem(item);
+    setEditingItem(null);
+  };
+
+  const handleCancel = () => {
+    setIsCreating(false);
+    setEditingItem(null);
+  };
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -46,19 +75,34 @@ const CreateMenu = () => {
         </div>
       </div>
 
+      {menuItems.length > 0 && !isCreating && (
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Input
+            type="text"
+            placeholder="Search by name or category..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 border-gray-200 focus:border-primary focus:ring-primary"
+          />
+        </div>
+      )}
+
       {isCreating && (
         <MenuItemForm
-          onSave={handleSaveItem}
-          onCancel={() => setIsCreating(false)}
+          onSave={handleSave}
+          onCancel={handleCancel}
           showOutOfStock={false}
           isHalfPriceOptional={true}
+          initialItem={editingItem || undefined}
         />
       )}
 
       <MenuItemList 
-        items={menuItems} 
+        items={filteredItems}
         onDelete={handleDeleteItem}
         onToggleOutOfStock={handleToggleOutOfStock}
+        onEdit={handleEdit}
       />
 
       {menuItems.length > 0 && !isCreating && (
