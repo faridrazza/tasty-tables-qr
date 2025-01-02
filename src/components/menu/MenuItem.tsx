@@ -15,7 +15,16 @@ const MenuItem = ({ item, onAddToCart }: MenuItemProps) => {
         className="w-full h-48 object-cover"
       />
       <div className="p-4">
-        <h3 className="text-lg font-semibold mb-2">{item.name}</h3>
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-lg font-semibold">{item.name}</h3>
+          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+            item.isVegetarian 
+            ? "bg-green-100 text-green-800" 
+            : "bg-red-100 text-red-800"
+          }`}>
+            {item.isVegetarian ? "Veg" : "Non-Veg"}
+          </span>
+        </div>
         <div className="flex justify-between items-center mb-4">
           <div>
             {item.halfPrice > 0 && (
@@ -38,6 +47,9 @@ const MenuItem = ({ item, onAddToCart }: MenuItemProps) => {
             </div>
           )}
         </div>
+        {item.category && (
+          <p className="text-sm text-gray-500">Category: {item.category}</p>
+        )}
       </div>
     </div>
   );
