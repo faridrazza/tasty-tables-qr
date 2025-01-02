@@ -37,7 +37,7 @@ const MenuItemForm = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-8">
       <div className="border-b border-gray-100 bg-gray-50/50 px-6 py-4">
         <h3 className="text-lg font-semibold text-gray-800">
           {initialItem ? "Edit Item" : "Add New Item"}
@@ -113,18 +113,16 @@ const MenuItemForm = ({
             <Input
               value={item.category || ""}
               onChange={(e) => handleUpdate("category", e.target.value)}
-              placeholder="Enter category (e.g., ice cream, bread)"
+              placeholder="Enter category (e.g., Ice Cream, Beverages)"
               className="border-gray-200 focus:border-primary focus:ring-primary"
             />
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Switch
-                checked={item.isVegetarian}
-                onCheckedChange={(checked) => handleUpdate("isVegetarian", checked)}
-              />
-              <span className="text-sm text-gray-600">Vegetarian</span>
-            </div>
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={item.isVegetarian}
+              onCheckedChange={(checked) => handleUpdate("isVegetarian", checked)}
+            />
+            <span className="text-sm text-gray-600">Vegetarian</span>
           </div>
         </div>
         <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-100">
