@@ -13,12 +13,10 @@ const CreateMenu = () => {
   useRequireAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
   
   const {
     menuItems,
-    isCreating,
-    setIsCreating,
     handleAddItem,
     handleSaveItem,
     handleDeleteItem,
@@ -33,19 +31,21 @@ const CreateMenu = () => {
     );
   });
 
-  const handleEdit = (item: MenuItem) => {
-    setEditingItem(item);
-    setIsCreating(true);
+  const handleEdit = async (item: MenuItem) => {
+    await handleSaveItem(item);
+  };
+
+  const handleAdd = () => {
+    setShowAddForm(true);
   };
 
   const handleSave = async (item: MenuItem) => {
     await handleSaveItem(item);
-    setEditingItem(null);
+    setShowAddForm(false);
   };
 
   const handleCancel = () => {
-    setIsCreating(false);
-    setEditingItem(null);
+    setShowAddForm(false);
   };
 
   return (
@@ -62,9 +62,9 @@ const CreateMenu = () => {
                 : `${menuItems.length} item${menuItems.length === 1 ? "" : "s"} in your menu`}
             </p>
           </div>
-          {!isCreating && (
+          {!showAddForm && (
             <Button 
-              onClick={handleAddItem} 
+              onClick={handleAdd} 
               size="lg"
               className="bg-primary hover:bg-primary/90 text-white shadow-lg transition-all duration-200 hover:scale-105"
             >
@@ -75,7 +75,7 @@ const CreateMenu = () => {
         </div>
       </div>
 
-      {menuItems.length > 0 && !isCreating && (
+      {menuItems.length > 0 && !showAddForm && (
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <Input
@@ -88,13 +88,12 @@ const CreateMenu = () => {
         </div>
       )}
 
-      {isCreating && (
+      {showAddForm && (
         <MenuItemForm
           onSave={handleSave}
           onCancel={handleCancel}
           showOutOfStock={false}
           isHalfPriceOptional={true}
-          initialItem={editingItem || undefined}
         />
       )}
 
@@ -105,7 +104,7 @@ const CreateMenu = () => {
         onEdit={handleEdit}
       />
 
-      {menuItems.length > 0 && !isCreating && (
+      {menuItems.length > 0 && !showAddForm && (
         <div className="mt-8 text-center pb-8">
           <Button
             variant="outline"
