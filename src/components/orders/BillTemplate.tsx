@@ -30,36 +30,40 @@ export const BillTemplate = ({ orderItems, tableNumber, orderTime, gstSettings, 
       </div>
 
       <table style="width: 100%; border-collapse: collapse;">
-        <tr style="border-bottom: 1px solid #000;">
-          <th style="text-align: left;">Item</th>
-          <th style="text-align: right;">Amount</th>
-        </tr>
-        ${orderItems.map(item => {
-          const price = item.size === 'full' ? item.menu_item.full_price : item.menu_item.half_price;
-          const itemTotal = (price || 0) * item.quantity;
-          return `
-            <tr>
-              <td>${item.quantity}x ${item.menu_item.name} (${item.size})</td>
-              <td style="text-align: right;">${formatCurrency(itemTotal)}</td>
-            </tr>
-          `;
-        }).join('')}
+        <thead>
+          <tr style="border-bottom: 1px solid #000;">
+            <th style="text-align: left;">Item</th>
+            <th style="text-align: right;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${orderItems.map(item => {
+            const price = item.size === 'full' ? item.menu_item.full_price : item.menu_item.half_price;
+            const itemTotal = (price || 0) * item.quantity;
+            return `
+              <tr>
+                <td>${item.quantity}x ${item.menu_item.name} (${item.size})</td>
+                <td style="text-align: right;" class="amount-cell">${formatCurrency(itemTotal)}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
       </table>
 
       <div style="margin-top: 20px; border-top: 1px solid #000;">
         <p style="display: flex; justify-content: space-between;">
           <span>Subtotal:</span>
-          <span>${formatCurrency(subtotal)}</span>
+          <span class="amount-cell">${formatCurrency(subtotal)}</span>
         </p>
         ${gstSettings?.gst_rate ? `
           <p style="display: flex; justify-content: space-between;">
             <span>GST (${gstSettings.gst_rate}%):</span>
-            <span>${formatCurrency(gstAmount)}</span>
+            <span class="amount-cell">${formatCurrency(gstAmount)}</span>
           </p>
         ` : ''}
         <p style="display: flex; justify-content: space-between; font-weight: bold;">
           <span>Total:</span>
-          <span>${formatCurrency(total)}</span>
+          <span class="amount-cell">${formatCurrency(total)}</span>
         </p>
       </div>
 

@@ -38,29 +38,24 @@ export const downloadPDF = (content: string, filename: string) => {
       .map(p => p.textContent);
     
     // Extract items and their prices
-    const items = Array.from(htmlDoc.querySelectorAll('table tr'))
-      .slice(1) // Skip header row
+    const items = Array.from(htmlDoc.querySelectorAll('table tbody tr'))
       .map(row => {
-        const tableRow = row as HTMLTableRowElement;
-        // Remove any numbers from the beginning of the amount string
-        const amountText = tableRow.cells[1]?.textContent || '';
-        const cleanedAmount = amountText.replace(/^\d+\s*/, '').trim();
-        
+        const cells = (row as HTMLTableRowElement).cells;
         return {
-          item: tableRow.cells[0]?.textContent || '',
-          amount: cleanedAmount
+          item: cells[0]?.textContent || '',
+          amount: cells[1]?.textContent || ''
         };
       });
     
     // Extract totals
-    const totals = Array.from(htmlDoc.querySelectorAll('div > p'))
+    const totals = Array.from(htmlDoc.querySelectorAll('.amount-cell'))
       .slice(-3)
-      .map(p => {
-        const text = p.textContent || '';
-        // Clean up the amount part by removing any leading numbers
-        const [label, amount] = text.split(':').map(part => part.trim());
-        const cleanedAmount = amount ? amount.replace(/^\d+\s*/, '').trim() : '';
-        return `${label}: ${cleanedAmount}`;
+      .map((cell, index) => {
+        const labels = ['Subtotal', 'GST', 'Total'];
+        return {
+          label: labels[index],
+          amount: cell.textContent || ''
+        };
       });
 
     // Start building PDF
@@ -92,11 +87,8 @@ export const downloadPDF = (content: string, filename: string) => {
     // Totals
     const finalY = (doc as any).lastAutoTable.finalY + 10;
     totals.forEach((total, index) => {
-      const [label, amount] = total.split(':');
-      if (label && amount) {
-        doc.text(label.trim(), 20, finalY + (index * 7));
-        doc.text(amount.trim(), doc.internal.pageSize.width - 20, finalY + (index * 7), { align: 'right' });
-      }
+      doc.text(total.label, 20, finalY + (index * 7));
+      doc.text(total.amount, doc.internal.pageSize.width - 20, finalY + (index * 7), { align: 'right' });
     });
     
     // Thank you message
