@@ -42,16 +42,26 @@ export const downloadPDF = (content: string, filename: string) => {
       .slice(1) // Skip header row
       .map(row => {
         const tableRow = row as HTMLTableRowElement;
+        // Remove any numbers from the beginning of the amount string
+        const amountText = tableRow.cells[1]?.textContent || '';
+        const cleanedAmount = amountText.replace(/^\d+\s*/, '').trim();
+        
         return {
           item: tableRow.cells[0]?.textContent || '',
-          amount: tableRow.cells[1]?.textContent || ''
+          amount: cleanedAmount
         };
       });
     
     // Extract totals
     const totals = Array.from(htmlDoc.querySelectorAll('div > p'))
       .slice(-3)
-      .map(p => p.textContent);
+      .map(p => {
+        const text = p.textContent || '';
+        // Clean up the amount part by removing any leading numbers
+        const [label, amount] = text.split(':').map(part => part.trim());
+        const cleanedAmount = amount ? amount.replace(/^\d+\s*/, '').trim() : '';
+        return `${label}: ${cleanedAmount}`;
+      });
 
     // Start building PDF
     doc.setFontSize(16);
@@ -82,10 +92,10 @@ export const downloadPDF = (content: string, filename: string) => {
     // Totals
     const finalY = (doc as any).lastAutoTable.finalY + 10;
     totals.forEach((total, index) => {
-      const parts = total?.split(':') || [];
-      if (parts.length === 2) {
-        doc.text(parts[0].trim(), 20, finalY + (index * 7));
-        doc.text(parts[1].trim(), doc.internal.pageSize.width - 20, finalY + (index * 7), { align: 'right' });
+      const [label, amount] = total.split(':');
+      if (label && amount) {
+        doc.text(label.trim(), 20, finalY + (index * 7));
+        doc.text(amount.trim(), doc.internal.pageSize.width - 20, finalY + (index * 7), { align: 'right' });
       }
     });
     
