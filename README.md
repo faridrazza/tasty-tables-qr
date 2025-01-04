@@ -34,6 +34,12 @@ npm i
 
 # Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
+
+# Step 5: To create a development build
+npm run build
+
+# Step 6: To create a production build
+npm run build:prod
 ```
 
 **Edit a file directly in GitHub**
@@ -52,7 +58,7 @@ npm run dev
 
 ## What technologies are used for this project?
 
-This project is built with .
+This project is built with:
 
 - Vite
 - TypeScript
