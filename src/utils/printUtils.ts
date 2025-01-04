@@ -40,10 +40,13 @@ export const downloadPDF = (content: string, filename: string) => {
     // Extract items and their prices
     const items = Array.from(htmlDoc.querySelectorAll('table tr'))
       .slice(1) // Skip header row
-      .map(row => ({
-        item: row.cells[0]?.textContent || '',
-        amount: row.cells[1]?.textContent || ''
-      }));
+      .map(row => {
+        const tableRow = row as HTMLTableRowElement;
+        return {
+          item: tableRow.cells[0]?.textContent || '',
+          amount: tableRow.cells[1]?.textContent || ''
+        };
+      });
     
     // Extract totals
     const totals = Array.from(htmlDoc.querySelectorAll('div > p'))
