@@ -6,14 +6,13 @@ import {
   BarChart,
   Settings,
   LogOut,
-  Users,
 } from "lucide-react";
 import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 export const SidebarNav = () => {
@@ -59,11 +58,6 @@ export const SidebarNav = () => {
       title: "Analytics",
       url: "/dashboard/analytics",
       icon: BarChart,
-    },
-    {
-      title: "Waiters",
-      url: "/dashboard/waiters",
-      icon: Users,
     },
     {
       title: "GST Settings",
