@@ -20,5 +20,20 @@ export interface WaiterProfilesTable {
     restaurant_id?: string
     created_at?: string
   }
-  Relationships: []
+  Relationships: [
+    {
+      foreignKeyName: "waiter_profiles_id_fkey"
+      columns: ["id"]
+      isOneToOne: true
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    },
+    {
+      foreignKeyName: "waiter_profiles_restaurant_id_fkey"
+      columns: ["restaurant_id"]
+      isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    }
+  ]
 }
