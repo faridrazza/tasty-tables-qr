@@ -45,7 +45,14 @@ export const useWaiterManagement = () => {
         },
       });
 
-      if (authError) throw authError;
+      // Handle specific error cases
+      if (authError) {
+        if (authError.message === "User already registered") {
+          throw new Error("A user with this email already exists. Please use a different email address.");
+        }
+        throw authError;
+      }
+
       if (!authData.user?.id) throw new Error("Failed to create user account");
 
       // Create waiter profile
