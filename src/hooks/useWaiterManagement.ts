@@ -30,9 +30,10 @@ export const useWaiterManagement = () => {
   const createWaiter = async ({ name, email, password }: { name: string; email: string; password: string }) => {
     setIsLoading(true);
     try {
+      // Get current user session
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) throw new Error("No authenticated user");
-      
+
       // Create auth account for waiter
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -45,7 +46,6 @@ export const useWaiterManagement = () => {
         },
       });
 
-      // Handle specific error cases
       if (authError) {
         if (authError.message === "User already registered") {
           throw new Error("A user with this email already exists. Please use a different email address.");
@@ -55,11 +55,7 @@ export const useWaiterManagement = () => {
 
       if (!authData.user?.id) throw new Error("Failed to create user account");
 
-      // Get fresh session to ensure we have the latest auth context
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("No active session");
-
-      // Create waiter profile using the authenticated client
+      // Create waiter profile
       const { error: profileError } = await supabase
         .from("waiter_profiles")
         .insert({
@@ -69,7 +65,12 @@ export const useWaiterManagement = () => {
           restaurant_id: currentUser.id,
         });
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        // If profile creation fails, we should handle cleanup of the auth user
+        // but since we can't do that with the current permissions, we'll just
+        // throw the error
+        throw profileError;
+      }
 
       toast({
         title: "Waiter account created successfully",
