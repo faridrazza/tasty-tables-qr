@@ -55,7 +55,11 @@ export const useWaiterManagement = () => {
 
       if (!authData.user?.id) throw new Error("Failed to create user account");
 
-      // Create waiter profile
+      // Get fresh session to ensure we have the latest auth context
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No active session");
+
+      // Create waiter profile using the authenticated client
       const { error: profileError } = await supabase
         .from("waiter_profiles")
         .insert({
@@ -65,12 +69,7 @@ export const useWaiterManagement = () => {
           restaurant_id: currentUser.id,
         });
 
-      if (profileError) {
-        // If profile creation fails, we should handle cleanup of the auth user
-        // but since we can't do that with the current permissions, we'll just
-        // throw the error
-        throw profileError;
-      }
+      if (profileError) throw profileError;
 
       toast({
         title: "Waiter account created successfully",
