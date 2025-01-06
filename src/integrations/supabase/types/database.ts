@@ -1,4 +1,4 @@
-import { GSTSettings, MenuItem, OrderItem, Order, WaiterProfile } from "./tables";
+import { GSTSettings, MenuItem, OrderItem, Order, WaiterProfile } from './tables';
 
 export type Database = {
   public: {
