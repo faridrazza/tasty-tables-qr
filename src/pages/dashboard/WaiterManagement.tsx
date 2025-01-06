@@ -4,8 +4,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Loader2, Trash2 } from "lucide-react";
-import type { WaiterProfile, WaiterFormData } from "@/types/waiter";
+import type { WaiterProfile } from "@/integrations/supabase/types";
+
+interface WaiterFormData {
+  name: string;
+  email: string;
+  password: string;
+}
 
 const WaiterManagement = () => {
   const [formData, setFormData] = useState<WaiterFormData>({
@@ -16,71 +30,80 @@ const WaiterManagement = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch waiters
   const { data: waiters, isLoading } = useQuery({
     queryKey: ["waiters"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("waiter_profiles")
-        .select("*");
+        .select("*")
+        .eq("restaurant_id", user?.id);
+
       if (error) throw error;
-      return data as WaiterProfile[];
+      return data as WaiterProfile["Row"][];
     },
   });
 
-  // Create waiter
   const createWaiter = useMutation({
     mutationFn: async (data: WaiterFormData) => {
-      // First create auth user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
           data: {
             role: "waiter",
+            name: data.name,
           },
         },
       });
+
       if (authError) throw authError;
 
-      // Then create waiter profile
+      // Create waiter profile
       const { error: profileError } = await supabase
         .from("waiter_profiles")
         .insert({
           id: authData.user!.id,
           name: data.name,
           email: data.email,
-          restaurant_id: (await supabase.auth.getUser()).data.user!.id,
-        });
+          restaurant_id: user?.id,
+        } as WaiterProfile["Insert"]);
+
       if (profileError) throw profileError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["waiters"] });
-      toast({ title: "Waiter created successfully" });
+      toast({ title: "Waiter account created successfully" });
       setFormData({ name: "", email: "", password: "" });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
-        title: "Failed to create waiter",
+        title: "Failed to create waiter account",
         description: error.message,
         variant: "destructive",
       });
     },
   });
 
-  // Delete waiter
   const deleteWaiter = useMutation({
     mutationFn: async (waiterId: string) => {
-      const { error } = await supabase.auth.admin.deleteUser(waiterId);
+      const { error } = await supabase
+        .from("waiter_profiles")
+        .delete()
+        .eq("id", waiterId);
+
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["waiters"] });
-      toast({ title: "Waiter deleted successfully" });
+      toast({ title: "Waiter account deleted successfully" });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
-        title: "Failed to delete waiter",
+        title: "Failed to delete waiter account",
         description: error.message,
         variant: "destructive",
       });
@@ -102,16 +125,14 @@ const WaiterManagement = () => {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold mb-4">Add New Waiter</h2>
-        <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
+      <div className="bg-white p-6 rounded-lg shadow">
+        <h2 className="text-xl font-semibold mb-4">Add New Waiter</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Name</label>
             <Input
               value={formData.name}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, name: e.target.value }))
-              }
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
             />
           </div>
@@ -120,9 +141,7 @@ const WaiterManagement = () => {
             <Input
               type="email"
               value={formData.email}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, email: e.target.value }))
-              }
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
             />
           </div>
@@ -131,42 +150,45 @@ const WaiterManagement = () => {
             <Input
               type="password"
               value={formData.password}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, password: e.target.value }))
-              }
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
               minLength={6}
             />
           </div>
           <Button type="submit" disabled={createWaiter.isPending}>
-            {createWaiter.isPending ? "Creating..." : "Create Waiter"}
+            {createWaiter.isPending ? "Creating..." : "Create Waiter Account"}
           </Button>
         </form>
       </div>
 
-      <div>
-        <h2 className="text-2xl font-bold mb-4">Waiter List</h2>
-        <div className="grid gap-4">
-          {waiters?.map((waiter) => (
-            <div
-              key={waiter.id}
-              className="flex items-center justify-between p-4 bg-white rounded-lg shadow"
-            >
-              <div>
-                <h3 className="font-medium">{waiter.name}</h3>
-                <p className="text-sm text-gray-600">{waiter.email}</p>
-              </div>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => deleteWaiter.mutate(waiter.id)}
-                disabled={deleteWaiter.isPending}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
+      <div className="bg-white rounded-lg shadow">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {waiters?.map((waiter) => (
+              <TableRow key={waiter.id}>
+                <TableCell>{waiter.name}</TableCell>
+                <TableCell>{waiter.email}</TableCell>
+                <TableCell>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => deleteWaiter.mutate(waiter.id)}
+                    disabled={deleteWaiter.isPending}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

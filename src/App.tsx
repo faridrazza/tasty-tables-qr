@@ -7,6 +7,7 @@ import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import DashboardLayout from "./components/DashboardLayout";
+import WaiterDashboard from "./pages/WaiterDashboard";
 import MenuPage from "./pages/MenuPage";
 import CreateMenu from "./pages/dashboard/CreateMenu";
 import QRCode from "./pages/dashboard/QRCode";
@@ -14,7 +15,6 @@ import Orders from "./pages/dashboard/Orders";
 import Analytics from "./pages/dashboard/Analytics";
 import GSTSettings from "./pages/dashboard/GSTSettings";
 import WaiterManagement from "./pages/dashboard/WaiterManagement";
-import WaiterDashboard from "./pages/dashboard/WaiterDashboard";
 
 const queryClient = new QueryClient();
 
@@ -36,7 +36,7 @@ const App = () => (
             <Route path="gst-settings" element={<GSTSettings />} />
             <Route path="waiter-management" element={<WaiterManagement />} />
           </Route>
-          <Route path="/dashboard/waiter" element={<WaiterDashboard />} />
+          <Route path="/waiter-dashboard" element={<WaiterDashboard />} />
           <Route path="/menu/:restaurantId" element={<MenuPage />} />
         </Routes>
       </BrowserRouter>

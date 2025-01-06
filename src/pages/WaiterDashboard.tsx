@@ -1,10 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
-import { OrderItems } from "@/components/orders/OrderItems";
-import { StatusBadge } from "@/components/orders/StatusBadge";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
   TableBody,
@@ -13,14 +9,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Loader2, Check, X } from "lucide-react";
+import { OrderItems } from "@/components/orders/OrderItems";
+import { StatusBadge } from "@/components/orders/StatusBadge";
 
 const WaiterDashboard = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: orders, isLoading } = useQuery({
-    queryKey: ["orders"],
+    queryKey: ["waiter-orders"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("orders")
         .select(`
@@ -34,6 +35,7 @@ const WaiterDashboard = () => {
             )
           )
         `)
+        .eq("restaurant_id", user?.user_metadata?.restaurant_id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -42,13 +44,7 @@ const WaiterDashboard = () => {
   });
 
   const updateOrderStatus = useMutation({
-    mutationFn: async ({
-      orderId,
-      status,
-    }: {
-      orderId: string;
-      status: string;
-    }) => {
+    mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
       const { data, error } = await supabase
         .from("orders")
         .update({ status })
@@ -60,10 +56,10 @@ const WaiterDashboard = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["waiter-orders"] });
       toast({ title: "Order status updated successfully" });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
         title: "Failed to update order status",
         description: error.message,
@@ -71,17 +67,6 @@ const WaiterDashboard = () => {
       });
     },
   });
-
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({
-        title: "Error signing out",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
 
   if (isLoading) {
     return (
@@ -92,12 +77,8 @@ const WaiterDashboard = () => {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">Orders Management</h1>
-        <Button onClick={handleLogout}>Logout</Button>
-      </div>
-
+    <div className="max-w-7xl mx-auto p-8">
+      <h1 className="text-2xl font-bold mb-6">Orders Management</h1>
       <div className="bg-white rounded-lg shadow">
         <Table>
           <TableHeader>
@@ -135,6 +116,7 @@ const WaiterDashboard = () => {
                           })
                         }
                       >
+                        <Check className="w-4 h-4 mr-1" />
                         Confirm
                       </Button>
                       <Button
@@ -147,6 +129,7 @@ const WaiterDashboard = () => {
                           })
                         }
                       >
+                        <X className="w-4 h-4 mr-1" />
                         Cancel
                       </Button>
                     </div>

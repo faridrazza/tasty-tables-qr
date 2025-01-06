@@ -5,8 +5,8 @@ import {
   ClipboardList,
   BarChart,
   Settings,
-  LogOut,
   Users,
+  LogOut,
 } from "lucide-react";
 import {
   SidebarMenu,
