@@ -5,6 +5,7 @@ import {
   ClipboardList,
   BarChart,
   Settings,
+  Users,
   LogOut,
 } from "lucide-react";
 import {
@@ -12,7 +13,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 export const SidebarNav = () => {
@@ -63,6 +64,11 @@ export const SidebarNav = () => {
       title: "GST Settings",
       url: "/dashboard/gst-settings",
       icon: Settings,
+    },
+    {
+      title: "Waiter Management",
+      url: "/dashboard/waiter-management",
+      icon: Users,
     },
   ];
 
