@@ -20,7 +20,8 @@ export const useWaiterManagement = () => {
 
       const { data, error } = await supabase
         .from("waiter_profiles")
-        .select("*");
+        .select("*")
+        .eq("restaurant_id", user.id);
 
       if (error) {
         console.error("Error fetching waiters:", error);
@@ -53,6 +54,10 @@ export const useWaiterManagement = () => {
 
       if (authError) throw authError;
       if (!authData.user?.id) throw new Error("Failed to create user account");
+
+      // Get fresh session to ensure we have the latest auth context
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No active session");
 
       // Create waiter profile
       const { error: profileError } = await supabase
