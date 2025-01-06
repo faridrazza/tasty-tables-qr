@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Loader2, Trash2 } from "lucide-react";
-import type { WaiterProfile } from "@/integrations/supabase/types";
+import { WaiterProfile, WaiterProfileRow } from "@/integrations/supabase/types/tables/waiter";
 
 interface WaiterFormData {
   name: string;
@@ -40,7 +40,7 @@ const WaiterManagement = () => {
         .eq("restaurant_id", user?.id);
 
       if (error) throw error;
-      return data as WaiterProfile["Row"][];
+      return data as WaiterProfileRow[];
     },
   });
 
