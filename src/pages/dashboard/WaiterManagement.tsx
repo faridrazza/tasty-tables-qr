@@ -48,6 +48,17 @@ const WaiterManagement = () => {
     mutationFn: async (data: WaiterFormData) => {
       const { data: { user } } = await supabase.auth.getUser();
       
+      // First check if the user exists
+      const { data: existingUsers } = await supabase
+        .from("waiter_profiles")
+        .select("email")
+        .eq("email", data.email)
+        .single();
+
+      if (existingUsers) {
+        throw new Error("A waiter with this email already exists");
+      }
+
       // Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
@@ -60,13 +71,22 @@ const WaiterManagement = () => {
         },
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        if (authError.message.includes("already registered")) {
+          throw new Error("This email is already registered. Please use a different email address.");
+        }
+        throw authError;
+      }
+
+      if (!authData.user) {
+        throw new Error("Failed to create user account");
+      }
 
       // Create waiter profile
       const { error: profileError } = await supabase
         .from("waiter_profiles")
         .insert({
-          id: authData.user!.id,
+          id: authData.user.id,
           name: data.name,
           email: data.email,
           restaurant_id: user?.id,
@@ -76,12 +96,15 @@ const WaiterManagement = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["waiters"] });
-      toast({ title: "Waiter account created successfully" });
+      toast({ 
+        title: "Success",
+        description: "Waiter account created successfully"
+      });
       setFormData({ name: "", email: "", password: "" });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
-        title: "Failed to create waiter account",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -99,11 +122,14 @@ const WaiterManagement = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["waiters"] });
-      toast({ title: "Waiter account deleted successfully" });
+      toast({ 
+        title: "Success",
+        description: "Waiter account deleted successfully" 
+      });
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to delete waiter account",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
