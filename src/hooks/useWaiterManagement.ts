@@ -15,10 +15,12 @@ export const useWaiterManagement = () => {
     queryKey: ["waiters"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+
       const { data, error } = await supabase
         .from("waiter_profiles")
         .select("*")
-        .eq("restaurant_id", user?.id);
+        .eq("restaurant_id", user.id);
 
       if (error) throw error;
       return data as WaiterProfile[];
@@ -29,6 +31,7 @@ export const useWaiterManagement = () => {
     setIsLoading(true);
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) throw new Error("No authenticated user");
       
       // Create auth account for waiter
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -37,7 +40,7 @@ export const useWaiterManagement = () => {
         options: {
           data: {
             role: "waiter",
-            restaurant_id: currentUser?.id,
+            restaurant_id: currentUser.id,
           },
         },
       });
@@ -52,7 +55,7 @@ export const useWaiterManagement = () => {
           id: authData.user.id,
           name,
           email,
-          restaurant_id: currentUser?.id,
+          restaurant_id: currentUser.id,
         });
 
       if (profileError) throw profileError;
