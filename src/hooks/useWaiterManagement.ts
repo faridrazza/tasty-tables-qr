@@ -11,6 +11,7 @@ export const useWaiterManagement = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Query to fetch waiters
   const { data: waiters, isLoading: isLoadingWaiters } = useQuery({
     queryKey: ["waiters"],
     queryFn: async () => {
@@ -19,18 +20,22 @@ export const useWaiterManagement = () => {
 
       const { data, error } = await supabase
         .from("waiter_profiles")
-        .select("*")
-        .eq("restaurant_id", user.id);
+        .select("*");
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching waiters:", error);
+        throw error;
+      }
+
       return data as WaiterProfile[];
     },
   });
 
+  // Create waiter mutation
   const createWaiter = async ({ name, email, password }: { name: string; email: string; password: string }) => {
     setIsLoading(true);
     try {
-      // Get current user session
+      // Get current authenticated user
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) throw new Error("No authenticated user");
 
@@ -46,20 +51,10 @@ export const useWaiterManagement = () => {
         },
       });
 
-      if (authError) {
-        if (authError.message === "User already registered") {
-          throw new Error("A user with this email already exists. Please use a different email address.");
-        }
-        throw authError;
-      }
-
+      if (authError) throw authError;
       if (!authData.user?.id) throw new Error("Failed to create user account");
 
-      // Get fresh session to ensure we have the latest auth context
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("No active session");
-
-      // Create waiter profile using the authenticated client
+      // Create waiter profile
       const { error: profileError } = await supabase
         .from("waiter_profiles")
         .insert({
@@ -72,16 +67,16 @@ export const useWaiterManagement = () => {
       if (profileError) throw profileError;
 
       toast({
-        title: "Waiter account created successfully",
-        description: "Please inform the waiter to check their email for verification.",
+        title: "Success",
+        description: "Waiter account created successfully",
       });
-      
+
       queryClient.invalidateQueries({ queryKey: ["waiters"] });
       return true;
     } catch (error: any) {
       console.error("Error creating waiter:", error);
       toast({
-        title: "Failed to create waiter account",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -91,6 +86,7 @@ export const useWaiterManagement = () => {
     }
   };
 
+  // Delete waiter mutation
   const deleteWaiter = useMutation({
     mutationFn: async (waiterId: string) => {
       const { error } = await supabase
@@ -103,12 +99,13 @@ export const useWaiterManagement = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["waiters"] });
       toast({
-        title: "Waiter deleted successfully",
+        title: "Success",
+        description: "Waiter deleted successfully",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to delete waiter",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
