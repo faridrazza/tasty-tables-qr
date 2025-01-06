@@ -13,14 +13,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Loader2, Trash2 } from "lucide-react";
+import { Tables } from "@/integrations/supabase/types";
 
-interface WaiterProfile {
-  id: string;
-  name: string;
-  email: string;
-  restaurant_id: string;
-  created_at: string;
-}
+type WaiterProfile = Tables<"waiter_profiles">;
 
 const WaiterManagement = () => {
   const [name, setName] = useState("");
