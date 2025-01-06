@@ -144,6 +144,30 @@ export type Database = {
         }
         Relationships: []
       }
+      waiter_profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          restaurant_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name: string
+          restaurant_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          restaurant_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -7,7 +7,7 @@ export interface WaiterProfilesTable {
     created_at: string
   }
   Insert: {
-    id?: string
+    id: string
     name: string
     email: string
     restaurant_id: string
