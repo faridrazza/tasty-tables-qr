@@ -55,7 +55,11 @@ export const useWaiterManagement = () => {
 
       if (!authData.user?.id) throw new Error("Failed to create user account");
 
-      // Create waiter profile
+      // Get fresh session to ensure we have the latest auth context
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No active session");
+
+      // Create waiter profile using the authenticated client
       const { error: profileError } = await supabase
         .from("waiter_profiles")
         .insert({
