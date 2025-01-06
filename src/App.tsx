@@ -13,6 +13,8 @@ import QRCode from "./pages/dashboard/QRCode";
 import Orders from "./pages/dashboard/Orders";
 import Analytics from "./pages/dashboard/Analytics";
 import GSTSettings from "./pages/dashboard/GSTSettings";
+import WaiterManagement from "./pages/dashboard/WaiterManagement";
+import WaiterDashboard from "./pages/dashboard/WaiterDashboard";
 
 const queryClient = new QueryClient();
 
@@ -32,7 +34,9 @@ const App = () => (
             <Route path="orders" element={<Orders />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="gst-settings" element={<GSTSettings />} />
+            <Route path="waiter-management" element={<WaiterManagement />} />
           </Route>
+          <Route path="/dashboard/waiter" element={<WaiterDashboard />} />
           <Route path="/menu/:restaurantId" element={<MenuPage />} />
         </Routes>
       </BrowserRouter>

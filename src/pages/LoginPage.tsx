@@ -2,12 +2,20 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("admin");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -16,7 +24,9 @@ const LoginPage = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/dashboard/create-menu");
+        const { data: { user } } = await supabase.auth.getUser();
+        const userRole = user?.user_metadata?.role || "admin";
+        navigate(userRole === "admin" ? "/dashboard/create-menu" : "/dashboard/waiter");
       }
     };
     
@@ -24,7 +34,8 @@ const LoginPage = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        navigate("/dashboard/create-menu");
+        const userRole = session.user?.user_metadata?.role || "admin";
+        navigate(userRole === "admin" ? "/dashboard/create-menu" : "/dashboard/waiter");
       }
     });
 
@@ -46,11 +57,18 @@ const LoginPage = () => {
       if (error) throw error;
 
       if (data.session) {
+        const userRole = data.user?.user_metadata?.role || "admin";
+        
+        if (role !== userRole) {
+          throw new Error("Invalid role selected for this account");
+        }
+
         toast({
           title: "Login successful",
           description: "Welcome back!",
         });
-        navigate("/dashboard/create-menu");
+        
+        navigate(role === "admin" ? "/dashboard/create-menu" : "/dashboard/waiter");
       }
     } catch (error: any) {
       console.error("Login error:", error);
@@ -71,6 +89,18 @@ const LoginPage = () => {
           Welcome Back
         </h2>
         <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Role</label>
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select your role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admin">Restaurant Admin</SelectItem>
+                <SelectItem value="waiter">Waiter</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div>
             <label className="block text-sm font-medium mb-1">Email</label>
             <Input
