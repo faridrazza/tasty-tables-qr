@@ -117,7 +117,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       orders: {
@@ -141,30 +141,6 @@ export type Database = {
           restaurant_id?: string | null
           status?: string
           table_number?: number
-        }
-        Relationships: []
-      }
-      waiter_profiles: {
-        Row: {
-          id: string
-          name: string
-          email: string
-          restaurant_id: string
-          created_at: string
-        }
-        Insert: {
-          id: string
-          name: string
-          email: string
-          restaurant_id: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          email?: string
-          restaurant_id?: string
-          created_at?: string
         }
         Relationships: []
       }

@@ -9,23 +9,45 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Loader2, Check, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { OrderStatus } from "@/components/orders/OrderStatus";
 import { OrderItems } from "@/components/orders/OrderItems";
 import { StatusBadge } from "@/components/orders/StatusBadge";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { OrderDocumentActions } from "@/components/orders/OrderDocumentActions";
 import { KOTTemplate } from "@/components/orders/KOTTemplate";
 import { BillTemplate } from "@/components/orders/BillTemplate";
 import { printContent, downloadPDF } from "@/utils/printUtils";
 
+interface OrderItem {
+  id: string;
+  menu_item_id: string;
+  quantity: number;
+  size: string;
+  menu_item: {
+    name: string;
+    half_price: number;
+    full_price: number;
+  };
+}
+
+interface Order {
+  id: string;
+  table_number: number;
+  status: string;
+  created_at: string;
+  order_items: OrderItem[];
+}
+
 const Orders = () => {
+  useRequireAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ["orders"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      console.log("Fetching orders...");
       const { data, error } = await supabase
         .from("orders")
         .select(`
@@ -39,11 +61,14 @@ const Orders = () => {
             )
           )
         `)
-        .eq("restaurant_id", user?.id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error("Error fetching orders:", error);
+        throw error;
+      }
+      console.log("Orders fetched:", data);
+      return data as Order[];
     },
   });
 
@@ -62,6 +87,7 @@ const Orders = () => {
 
   const updateOrderStatus = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
+      console.log("Updating order status:", { orderId, status });
       const { data, error } = await supabase
         .from("orders")
         .update({ status })
@@ -69,32 +95,44 @@ const Orders = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error updating order:", error);
+        throw new Error(error.message);
+      }
+
+      console.log("Update successful:", data);
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
+      const actionText = data.status === 'cancelled' ? 'cancelled' : 'completed';
       toast({
-        title: `Order ${data.status} successfully`,
+        title: `Order ${actionText} successfully`,
       });
     },
-    onError: (error: any) => {
+    onError: (error) => {
+      console.error("Error in mutation:", error);
       toast({
         title: "Failed to update order status",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Please try again",
         variant: "destructive",
       });
     },
   });
 
-  const calculateSubtotal = (items: any[]) => {
+  const handleUpdateStatus = (orderId: string, status: string) => {
+    console.log("Handle update status called:", { orderId, status });
+    updateOrderStatus.mutate({ orderId, status });
+  };
+
+  const calculateSubtotal = (items: OrderItem[]) => {
     return items.reduce((total, item) => {
       const price = item.size === 'full' ? item.menu_item.full_price : item.menu_item.half_price;
       return total + (price * item.quantity);
     }, 0);
   };
 
-  const handleKOTActions = (order: any) => {
+  const handleKOTActions = (order: Order) => {
     const kotContent = KOTTemplate({
       orderItems: order.order_items,
       tableNumber: order.table_number,
@@ -107,7 +145,7 @@ const Orders = () => {
     };
   };
 
-  const handleBillActions = (order: any) => {
+  const handleBillActions = (order: Order) => {
     const subtotal = calculateSubtotal(order.order_items);
     const billContent = BillTemplate({
       orderItems: order.order_items,
@@ -127,7 +165,18 @@ const Orders = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!orders?.length) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">No Orders</h1>
+          <p className="text-gray-600">There are no orders to display.</p>
+        </div>
       </div>
     );
   }
@@ -179,36 +228,11 @@ const Orders = () => {
                     />
                   </TableCell>
                   <TableCell>
-                    {order.status === "pending" && (
-                      <div className="flex space-x-2">
-                        <Button
-                          size="sm"
-                          className="bg-green-500 hover:bg-green-600"
-                          onClick={() =>
-                            updateOrderStatus.mutate({
-                              orderId: order.id,
-                              status: "confirmed",
-                            })
-                          }
-                        >
-                          <Check className="w-4 h-4 mr-1" />
-                          Confirm
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() =>
-                            updateOrderStatus.mutate({
-                              orderId: order.id,
-                              status: "cancelled",
-                            })
-                          }
-                        >
-                          <X className="w-4 h-4 mr-1" />
-                          Cancel
-                        </Button>
-                      </div>
-                    )}
+                    <OrderStatus
+                      status={order.status}
+                      orderId={order.id}
+                      onUpdateStatus={handleUpdateStatus}
+                    />
                   </TableCell>
                 </TableRow>
               );
