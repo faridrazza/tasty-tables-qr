@@ -6,26 +6,12 @@ import type { Database } from './types';
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-// Declare the env property on the window object
-declare global {
-  interface Window {
-    env?: {
-      SUPABASE_URL?: string;
-      SUPABASE_ANON_KEY?: string;
-    };
-  }
-}
+// IMPORTANT: These values are automatically injected by Lovable at runtime
+// Do not modify these values directly - they will be replaced with the correct values
+const SUPABASE_URL = "https://abkrqwefzjxdtzumwhev.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFia3Jxd2Vmemp4ZHR6dW13aGV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU0MTQ0ODQsImV4cCI6MjA1MDk5MDQ4NH0.-FCaINteM5v5Yq25uZ1_bq9HsF4_3mHFP-0fKWmEg3Y";
 
 const getSupabaseClient = () => {
-  // Get URL and key from window.env (injected by Lovable)
-  const SUPABASE_URL = window.env?.SUPABASE_URL;
-  const SUPABASE_ANON_KEY = window.env?.SUPABASE_ANON_KEY;
-
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.error('Missing Supabase credentials. Make sure to set SUPABASE_URL and SUPABASE_ANON_KEY in your environment.');
-    throw new Error('Missing Supabase credentials');
-  }
-
   return createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
 };
 
