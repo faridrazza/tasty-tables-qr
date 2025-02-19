@@ -28,6 +28,7 @@ const DashboardLayout = () => {
           </SidebarContent>
         </Sidebar>
         <main className="flex-1 p-4 md:p-8 bg-gray-50 w-full">
+          <div className="md:hidden h-14" /> {/* Spacer for mobile menu button */}
           <Outlet />
         </main>
       </div>
