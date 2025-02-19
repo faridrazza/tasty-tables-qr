@@ -77,44 +77,52 @@ export const SidebarNav = () => {
     setOpen(false);
   };
 
+  // Mobile navigation component
   const MobileNav = () => (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
+    <>
+      {/* Fixed mobile header */}
+      <div className="fixed top-0 left-0 right-0 h-16 bg-white border-b md:hidden z-40 flex items-center px-4">
         <Button 
           variant="ghost" 
           size="icon"
-          className="md:hidden fixed top-4 left-4 z-50"
+          onClick={() => setOpen(true)}
+          className="mr-3"
         >
           <Menu className="h-6 w-6" />
         </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="w-[300px] sm:w-[350px] p-0">
-        <div className="flex flex-col h-full bg-white">
-          <div className="p-6 border-b">
-            <h2 className="text-xl font-bold text-primary">RestaurantOS</h2>
-          </div>
-          <nav className="flex-1 p-4">
-            {menuItems.map((item) => (
+        <h1 className="text-lg font-semibold text-primary">RestaurantOS</h1>
+      </div>
+
+      {/* Mobile slide-out menu */}
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="left" className="w-[280px] p-0">
+          <div className="flex flex-col h-full bg-white">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-bold text-primary">RestaurantOS</h2>
+            </div>
+            <nav className="flex-1 p-4 space-y-2">
+              {menuItems.map((item) => (
+                <button
+                  key={item.title}
+                  onClick={() => handleNavigation(item.url)}
+                  className="flex items-center w-full px-4 py-3 text-left text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <item.icon className="w-5 h-5 mr-3 text-primary" />
+                  {item.title}
+                </button>
+              ))}
               <button
-                key={item.title}
-                onClick={() => handleNavigation(item.url)}
-                className="flex items-center w-full px-4 py-3 text-left text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                onClick={handleLogout}
+                className="flex items-center w-full px-4 py-3 text-left text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors mt-4"
               >
-                <item.icon className="w-5 h-5 mr-3 text-primary" />
-                {item.title}
+                <LogOut className="w-5 h-5 mr-3" />
+                Logout
               </button>
-            ))}
-            <button
-              onClick={handleLogout}
-              className="flex items-center w-full px-4 py-3 text-left text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors mt-2"
-            >
-              <LogOut className="w-5 h-5 mr-3" />
-              Logout
-            </button>
-          </nav>
-        </div>
-      </SheetContent>
-    </Sheet>
+            </nav>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 
   return (
