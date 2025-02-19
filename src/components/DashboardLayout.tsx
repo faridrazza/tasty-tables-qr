@@ -1,3 +1,4 @@
+
 import { Outlet } from "react-router-dom";
 import {
   Sidebar,
@@ -11,13 +12,12 @@ import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { SidebarNav } from "./sidebar/SidebarNav";
 
 const DashboardLayout = () => {
-  // Add authentication check at the layout level
   useRequireAuth();
 
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <Sidebar>
+        <Sidebar className="hidden md:block">
           <SidebarContent>
             <SidebarGroup>
               <SidebarGroupLabel>RestaurantOS</SidebarGroupLabel>
@@ -27,7 +27,7 @@ const DashboardLayout = () => {
             </SidebarGroup>
           </SidebarContent>
         </Sidebar>
-        <main className="flex-1 p-8 bg-gray-50">
+        <main className="flex-1 p-4 md:p-8 bg-gray-50 w-full">
           <Outlet />
         </main>
       </div>

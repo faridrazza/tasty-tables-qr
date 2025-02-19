@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Trash2, Edit } from "lucide-react";
@@ -29,7 +30,7 @@ const MenuItemList = ({ items, onDelete, onToggleOutOfStock, onEdit }: MenuItemL
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {items.map((item) => (
         <div
           key={item.id}
@@ -44,10 +45,10 @@ const MenuItemList = ({ items, onDelete, onToggleOutOfStock, onEdit }: MenuItemL
             />
           ) : (
             <>
-              <div className="border-b border-gray-100 bg-gray-50/50 px-6 py-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
-                  <div className="flex items-center space-x-2">
+              <div className="border-b border-gray-100 bg-gray-50/50 px-4 md:px-6 py-4">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
+                  <h3 className="text-base md:text-lg font-semibold text-gray-800">{item.name}</h3>
+                  <div className="flex flex-wrap items-center gap-2">
                     {item.isVegetarian !== undefined && (
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                         item.isVegetarian 
@@ -65,14 +66,14 @@ const MenuItemList = ({ items, onDelete, onToggleOutOfStock, onEdit }: MenuItemL
                   </div>
                 </div>
               </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-4 md:p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-600 mb-1">
                         Half Price
                       </label>
-                      <div className="text-lg font-semibold text-primary">
+                      <div className="text-base md:text-lg font-semibold text-primary">
                         {item.halfPrice ? `₹${item.halfPrice}` : 'N/A'}
                       </div>
                     </div>
@@ -80,13 +81,13 @@ const MenuItemList = ({ items, onDelete, onToggleOutOfStock, onEdit }: MenuItemL
                       <label className="block text-sm font-medium text-gray-600 mb-1">
                         Full Price
                       </label>
-                      <div className="text-lg font-semibold text-primary">
+                      <div className="text-base md:text-lg font-semibold text-primary">
                         ₹{item.fullPrice}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center justify-end space-x-4">
-                    <div className="relative w-24 h-24">
+                    <div className="relative w-20 h-20 md:w-24 md:h-24">
                       <img
                         src={item.image}
                         alt={item.name}
@@ -95,7 +96,7 @@ const MenuItemList = ({ items, onDelete, onToggleOutOfStock, onEdit }: MenuItemL
                     </div>
                   </div>
                 </div>
-                <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-100">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mt-6 pt-4 border-t border-gray-100">
                   <div className="flex items-center space-x-2">
                     <Switch 
                       checked={item.outOfStock} 
