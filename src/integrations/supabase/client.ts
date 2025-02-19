@@ -6,6 +6,16 @@ import type { Database } from './types';
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Declare the env property on the window object
+declare global {
+  interface Window {
+    env?: {
+      SUPABASE_URL?: string;
+      SUPABASE_ANON_KEY?: string;
+    };
+  }
+}
+
 const getSupabaseClient = () => {
   // Get URL and key from window.env (injected by Lovable)
   const SUPABASE_URL = window.env?.SUPABASE_URL;
