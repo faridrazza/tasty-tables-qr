@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useParams } from "react-router-dom";
@@ -169,7 +170,7 @@ const MenuPage = () => {
       <MenuHeader />
       <MenuStateHandler isLoading={isLoading} itemsCount={menuItems.length} />
       {!isLoading && menuItems.length > 0 && (
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 mb-20 md:mb-0">
           <MenuItemsGrid items={menuItems} onAddToCart={addToCart} />
         </div>
       )}

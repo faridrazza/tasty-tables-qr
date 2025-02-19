@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { X, Plus, Minus } from "lucide-react";
 import { CartItem, MenuItem } from "@/types/menu";
@@ -16,12 +17,12 @@ const CartItemComponent = ({
   onAddToCart,
 }: CartItemComponentProps) => {
   return (
-    <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+    <div className="flex flex-col sm:flex-row justify-between gap-2 sm:items-center bg-gray-50 p-2 sm:p-3 rounded-lg">
       <div className="flex flex-col">
-        <span className="font-medium">{item.name}</span>
-        <span className="text-sm text-gray-500">({item.size})</span>
+        <span className="font-medium text-sm sm:text-base">{item.name}</span>
+        <span className="text-xs sm:text-sm text-gray-500">({item.size})</span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 self-end sm:self-auto">
         <div className="flex items-center gap-1 bg-white rounded-md border p-1">
           <Button
             size="icon"
@@ -30,9 +31,9 @@ const CartItemComponent = ({
             onClick={() => onRemoveFromCart(item.id, item.size)}
             disabled={isPlacingOrder || item.quantity <= 1}
           >
-            <Minus className="h-4 w-4" />
+            <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
-          <span className="w-8 text-center">{item.quantity}</span>
+          <span className="w-6 sm:w-8 text-center text-sm sm:text-base">{item.quantity}</span>
           <Button
             size="icon"
             variant="ghost"
@@ -40,16 +41,17 @@ const CartItemComponent = ({
             onClick={() => onAddToCart(item, item.size)}
             disabled={isPlacingOrder}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
         </div>
         <Button
           size="sm"
           variant="destructive"
+          className="h-7 w-7 sm:h-8 sm:w-8 p-0"
           onClick={() => onRemoveFromCart(item.id, item.size)}
           disabled={isPlacingOrder}
         >
-          <X className="w-4 h-4" />
+          <X className="h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
       </div>
     </div>
