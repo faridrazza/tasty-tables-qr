@@ -66,7 +66,7 @@ const ChatPage = () => {
         
         setMessages([{
           role: "assistant",
-          content: `👋 Welcome to ${gstData.restaurant_name}! I'm your AI assistant.\n\nPlease provide your table number to get started.`
+          content: `👋 Welcome to ${gstData.restaurant_name}!\n\nI'm your AI assistant and I'll help you explore our menu and place your order. To get started, please let me know your table number.`
         }]);
       }
     } catch (error) {
@@ -198,9 +198,9 @@ const ChatPage = () => {
                     message.role === "assistant"
                       ? "bg-gray-100 text-gray-800"
                       : "bg-primary text-white"
-                  }`}
+                  } whitespace-pre-wrap`}
                 >
-                  <pre className="whitespace-pre-wrap font-sans">{message.content}</pre>
+                  {message.content}
                 </div>
               </div>
             ))}

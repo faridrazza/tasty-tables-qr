@@ -7,6 +7,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface MenuItem {
+  id: string;
+  name: string;
+  category: string;
+  halfPrice: number | null;
+  fullPrice: number;
+  isVegetarian: boolean;
+  outOfStock: boolean;
+}
+
+interface Message {
+  role: string;
+  content: string;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -20,8 +35,8 @@ serve(async (req) => {
     let updatedOrderItems = [...(orderItems || [])];
     let createOrder = false;
 
-    // Format menu items for better display
-    const formattedMenu = menuItems.reduce((acc, item) => {
+    // Format menu items by category
+    const formattedMenu = menuItems.reduce((acc: Record<string, MenuItem[]>, item: MenuItem) => {
       const category = item.category || 'Other';
       if (!acc[category]) {
         acc[category] = [];
@@ -35,40 +50,14 @@ serve(async (req) => {
       const numbers = message.match(/\d+/);
       if (numbers) {
         detectedTableNumber = numbers[0];
-        reply = `Thank you! I've noted your table number as ${detectedTableNumber}. Would you like to see our menu? I can show you our specialties and help you place an order.`;
+        reply = `Thank you! I've noted your table number as ${detectedTableNumber}. Would you like to see our menu? I can help you explore our specialties and place your order.`;
       }
     } else {
-      // Prepare a detailed system message for better context
-      const systemMessage = `You are a professional AI assistant for ${restaurantName}. Your role is to provide excellent customer service:
-
-1. Menu Presentation:
-   - When showing the menu, organize items by category
-   - Highlight vegetarian options
-   - Always mention if items are out of stock
-   - Show both half and full portion prices when available
-
-2. Order Management:
-   - Keep track of all ordered items throughout the conversation
-   - For each order, confirm: item name, quantity, and size (half/full)
-   - Maintain a running total of the order
-
-3. Key Behaviors:
-   - Be professional, courteous, and concise
-   - If no table number is provided, politely ask for it
-   - Proactively offer menu recommendations
-   - For order confirmations, always list all items ordered with their details
-
-Current Context:
-- Restaurant: ${restaurantName}
-- Table Number: ${tableNumber || 'Not provided'}
-- Menu Categories: ${Object.keys(formattedMenu).join(', ')}
-- Current Order Items: ${JSON.stringify(orderItems)}`;
-
-      // Special handling for menu display request
+      // Handle menu display request
       if (message.toLowerCase().includes('menu') || message.toLowerCase().includes('what do you have')) {
         const menuText = Object.entries(formattedMenu)
           .map(([category, items]) => {
-            const itemsList = items.map((item: any) => {
+            const itemsList = items.map((item: MenuItem) => {
               const prices = [];
               if (item.halfPrice) prices.push(`Half: ₹${item.halfPrice}`);
               prices.push(`Full: ₹${item.fullPrice}`);
@@ -80,9 +69,30 @@ Current Context:
           })
           .join('\n');
 
-        reply = `Here's our menu:${menuText}\n\n🟢 = Vegetarian | 🔴 = Non-vegetarian\nWhat would you like to order?`;
+        reply = `Here's our menu:${menuText}\n\n🟢 = Vegetarian | 🔴 = Non-vegetarian\n\nWhat would you like to order? I can help you with our specialties or popular dishes if you'd like recommendations.`;
       } else {
-        // Regular conversation handling
+        // Prepare system message for better context
+        const systemMessage = `You are a professional restaurant AI assistant for ${restaurantName}. Your role is to:
+
+1. Menu & Ordering:
+   - Keep track of ordered items and quantities
+   - Confirm each order item with size (half/full) and quantity
+   - Calculate and show total bill when requested
+   - Highlight vegetarian options when recommending dishes
+
+2. Key Behaviors:
+   - Be courteous and professional
+   - Ask for table number if not provided
+   - Make relevant menu recommendations
+   - Keep responses concise and clear
+
+Current Context:
+- Restaurant: ${restaurantName}
+- Table: ${tableNumber || 'Not provided'}
+- Categories: ${Object.keys(formattedMenu).join(', ')}
+- Current Order: ${JSON.stringify(orderItems)}`;
+
+        // Get AI response
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -90,12 +100,16 @@ Current Context:
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'gpt-4o-mini',
+            model: 'gpt-4',
             messages: [
               { role: 'system', content: systemMessage },
-              ...chatHistory,
+              ...chatHistory.map((msg: Message) => ({
+                role: msg.role,
+                content: msg.content
+              })),
               { role: 'user', content: message }
             ],
+            temperature: 0.7,
           }),
         });
 
