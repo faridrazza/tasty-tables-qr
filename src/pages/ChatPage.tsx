@@ -39,7 +39,20 @@ const ChatPage = () => {
         .eq("restaurant_id", restaurantId);
 
       if (menuError) throw menuError;
-      setMenuItems(menuData || []);
+      
+      // Transform the menu items to match the MenuItem type
+      const transformedMenuItems: MenuItem[] = (menuData || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        image: item.image_url || "",
+        halfPrice: item.half_price,
+        fullPrice: item.full_price,
+        outOfStock: item.out_of_stock || false,
+        isVegetarian: item.is_vegetarian,
+        category: item.category,
+      }));
+      
+      setMenuItems(transformedMenuItems);
 
       // Fetch restaurant name
       const { data: gstData, error: gstError } = await supabase
