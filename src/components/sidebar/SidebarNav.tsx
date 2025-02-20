@@ -8,7 +8,6 @@ import {
   Settings,
   LogOut,
   Menu,
-  MessageSquare,
 } from "lucide-react";
 import {
   SidebarMenu,
@@ -55,11 +54,6 @@ export const SidebarNav = () => {
       title: "QR Code",
       url: "/dashboard/qr-code",
       icon: QrCode,
-    },
-    {
-      title: "AI Chat QR",
-      url: "/dashboard/ai-chat-qr",
-      icon: MessageSquare,
     },
     {
       title: "Orders",

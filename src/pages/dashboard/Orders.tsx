@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,7 +70,19 @@ const Orders = () => {
       console.log("Orders fetched:", data);
       return data as Order[];
     },
-    refetchInterval: 10000, // Refresh every 10 seconds to catch new orders
+  });
+
+  const { data: gstSettings } = useQuery({
+    queryKey: ["gst-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("gst_settings")
+        .select("*")
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
   });
 
   const updateOrderStatus = useMutation({
@@ -151,19 +162,6 @@ const Orders = () => {
     };
   };
 
-  const { data: gstSettings } = useQuery({
-    queryKey: ["gst-settings"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("gst_settings")
-        .select("*")
-        .maybeSingle();
-
-      if (error) throw error;
-      return data;
-    },
-  });
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -184,9 +182,9 @@ const Orders = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4">
+    <div className="max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Orders Management</h1>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-lg shadow">
         <Table>
           <TableHeader>
             <TableRow>
