@@ -19,30 +19,32 @@ import ChatPage from "./pages/ChatPage";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignUpPage />} />
-          <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route path="create-menu" element={<CreateMenu />} />
-            <Route path="qr-code" element={<QRCode />} />
-            <Route path="ai-chat-qr" element={<AIChatQR />} />
-            <Route path="orders" element={<Orders />} />
-            <Route path="analytics" element={<Analytics />} />
-            <Route path="gst-settings" element={<GSTSettings />} />
-          </Route>
-          <Route path="/menu/:restaurantId" element={<MenuPage />} />
-          <Route path="/chat/:restaurantId" element={<ChatPage />} />
-        </Routes>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignUpPage />} />
+            <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route path="create-menu" element={<CreateMenu />} />
+              <Route path="qr-code" element={<QRCode />} />
+              <Route path="ai-chat-qr" element={<AIChatQR />} />
+              <Route path="orders" element={<Orders />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="gst-settings" element={<GSTSettings />} />
+            </Route>
+            <Route path="/menu/:restaurantId" element={<MenuPage />} />
+            <Route path="/chat/:restaurantId" element={<ChatPage />} />
+          </Routes>
+        </TooltipProvider>
       </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+};
 
 export default App;
